@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup Neumorphism (Plena Contábil)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/*
+  ============================================================
+  MOCKUP VISUAL: NEUMORPHISM
+  ============================================================
+  Tela estática, sem JS e sem interação. Existe só para o Filipe decidir se o
+  Neumorphism entra no lugar do glassmorphism que está no painel de verdade.
+
+  A regra do Neumorphism: o elemento tem a MESMA cor do fundo, e o relevo vem
+  de duas sombras opostas, uma clara e uma escura. Isso obriga o fundo a ter
+  luminosidade média. O navy da marca (#0a1628, L≈8%) é escuro demais: não
+  sobra range para a sombra clara subir. Então o fundo aqui foi LEVANTADO para
+  #182741 (L≈17%). É esse o preço, e é exatamente o que se está avaliando.
+*/
+:root {
+  /* Marca original, preservada onde ela sobrevive */
+  --gold: #c9a84c;
+  --gold-light: #e2c670;
+  --off-white: #f8f6f0;
+  --texto-suave: #93a4bd;
+
+  /* Base neumórfica: fundo e elemento compartilham esta cor */
+  --neu-base: #182741;
+  --neu-luz: #223558;   /* sombra clara, canto superior esquerdo */
+  --neu-sombra: #0c1425; /* sombra escura, canto inferior direito */
+
+  --ok: #34d399;
+  --alerta: #e2c670;
+  --critico: #f87171;
+  --info: #60a5fa;
+
+  --r-card: 20px;
+  --r-painel: 28px;
+  --r-pill: 999px;
+
+  --display: "Playfair Display", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--neu-base);
+  color: var(--off-white);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   AS DUAS PRIMITIVAS DO NEUMORPHISM
+   Tudo nesta tela é uma destas duas, ou uma combinação.
+   ============================================================ */
+
+/* Saliente: o objeto sai do fundo. Botão, cartão, indicador. */
+.relevo {
+  background: var(--neu-base);
+  box-shadow: 9px 9px 18px var(--neu-sombra), -9px -9px 18px var(--neu-luz);
+}
+
+.relevo-suave {
+  background: var(--neu-base);
+  box-shadow: 5px 5px 11px var(--neu-sombra), -5px -5px 11px var(--neu-luz);
+}
+
+/* Afundado: o objeto entra no fundo. Campo de busca, trilho, item ativo. */
+.afundado {
+  background: var(--neu-base);
+  box-shadow: inset 5px 5px 10px var(--neu-sombra), inset -5px -5px 10px var(--neu-luz);
+}
+
+.afundado-forte {
+  background: var(--neu-base);
+  box-shadow: inset 7px 7px 14px var(--neu-sombra), inset -7px -7px 14px var(--neu-luz);
+}
+
+/* ============================================================
+   ESQUELETO DA PÁGINA
+   ============================================================ */
+.app { display: flex; min-height: 100vh; }
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: 264px;
+  flex-shrink: 0;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  box-shadow: 14px 0 28px -18px var(--neu-sombra);
+}
+
+.marca { display: flex; align-items: center; gap: 13px; padding: 0 6px; }
+
+.marca-selo {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-family: var(--display);
+  font-size: 20px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.marca-nome { font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: .2px; }
+.marca-sub { font-size: 10.5px; color: var(--texto-suave); letter-spacing: 2.2px; text-transform: uppercase; margin-top: 3px; }
+
+.nav { display: flex; flex-direction: column; gap: 9px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 16px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+
+/* Item ativo: afundado. Aqui o Neumorphism ganha do glass, o estado
+   "selecionado" fica óbvio sem precisar de barra colorida ou fundo diferente. */
+.nav-item.ativo { color: var(--gold-light); }
+.nav-item.ativo svg { color: var(--gold); }
+
+.nav-item svg { width: 19px; height: 19px; flex-shrink: 0; stroke-width: 1.7; }
+
+.nav-rodape { margin-top: auto; padding: 16px; border-radius: 17px; }
+.nav-rodape p { font-size: 11.5px; color: var(--texto-suave); line-height: 1.6; }
+.nav-rodape strong { color: var(--gold-light); font-weight: 500; display: block; margin-bottom: 5px; font-size: 12.5px; }
+
+/* ---------- Conteúdo ---------- */
+.conteudo { flex: 1; min-width: 0; padding: 24px 34px 46px; }
+
+.topbar {
+  display: flex; align-items: center; gap: 18px;
+  padding: 13px 20px;
+  border-radius: var(--r-pill);
+  margin-bottom: 38px;
+}
+
+.busca {
+  flex: 1; max-width: 400px;
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 19px;
+  border-radius: var(--r-pill);
+  color: var(--texto-suave);
+  font-size: 13.5px;
+}
+.busca svg { width: 16px; height: 16px; stroke-width: 1.8; }
+
+.topbar-acoes { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+.icone-botao {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--texto-suave);
+  position: relative;
+}
+.icone-botao svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+.ponto-notificacao {
+  position: absolute; top: 9px; right: 10px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--critico);
+  box-shadow: 0 0 0 3px var(--neu-base);
+}
+
+.perfil { display: flex; align-items: center; gap: 11px; padding: 6px 16px 6px 6px; border-radius: var(--r-pill); }
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12.5px; font-weight: 600; color: var(--gold);
+  background: var(--neu-base);
+  box-shadow: inset 2px 2px 5px var(--neu-sombra), inset -2px -2px 5px var(--neu-luz);
+}
+.perfil-nome { font-size: 13px; font-weight: 500; }
+.perfil-papel { font-size: 10.5px; color: var(--texto-suave); margin-top: 1px; }
+
+/* ---------- Cabeçalho da página ---------- */
+.cabecalho { margin-bottom: 30px; }
+.cabecalho h1 { font-family: var(--display); font-size: 34px; font-weight: 600; letter-spacing: -.4px; }
+.cabecalho p { margin-top: 9px; font-size: 13.5px; color: var(--texto-suave); }
+.sep { margin: 0 9px; opacity: .35; }
+.texto-critico { color: var(--critico); }
+
+/* ---------- Indicadores ---------- */
+.grade-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; margin-bottom: 42px; }
+
+.indicador { padding: 23px; border-radius: var(--r-card); }
+.indicador-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.indicador-rotulo { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--texto-suave); }
+.indicador-valor { font-family: var(--display); font-size: 27px; font-weight: 600; margin-top: 13px; letter-spacing: -.5px; }
+.indicador-detalhe { font-size: 11.5px; color: var(--texto-suave); margin-top: 7px; }
+
+/* O ícone afundado dentro do cartão saliente: dois níveis de profundidade no
+   mesmo objeto. É o que dá a leitura de "objeto físico" que o glass não tem. */
+.indicador-icone {
+  width: 42px; height: 42px; border-radius: 13px;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.indicador-icone svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+.tom-acento .indicador-icone svg { color: var(--gold); }
+.tom-ok .indicador-icone svg { color: var(--ok); }
+.tom-critico .indicador-icone svg { color: var(--critico); }
+.tom-neutro .indicador-icone svg { color: var(--info); }
+
+.tom-acento .indicador-valor { color: var(--gold-light); }
+.tom-critico .indicador-valor { color: var(--critico); }
+.tom-ok .indicador-valor { color: var(--off-white); }
+
+/* ---------- Seção ---------- */
+.secao { margin-bottom: 42px; }
+.secao-cabecalho { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.secao-cabecalho h2 { font-family: var(--display); font-size: 21px; font-weight: 500; }
+.secao-cabecalho p { font-size: 13px; color: var(--texto-suave); margin-top: 5px; }
+
+.etiqueta {
+  padding: 8px 17px; border-radius: var(--r-pill);
+  font-size: 11.5px; font-weight: 500; letter-spacing: .3px;
+  flex-shrink: 0;
+}
+.etiqueta.critico { color: var(--critico); }
+.etiqueta.ok { color: var(--ok); }
+.etiqueta.alerta { color: var(--alerta); }
+
+/* ---------- Cartões de vencimento ---------- */
+.grade-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+
+.vencimento { padding: 24px; border-radius: var(--r-card); display: flex; align-items: center; gap: 22px; }
+.vencimento-info { flex: 1; min-width: 0; }
+.vencimento-titulo { font-size: 15.5px; font-weight: 600; }
+.vencimento-meta { font-size: 12px; color: var(--texto-suave); margin-top: 6px; }
+.vencimento-valor { font-family: var(--display); font-size: 23px; font-weight: 600; margin-top: 13px; letter-spacing: -.3px; }
+
+/* Anel de progresso: trilho afundado, arco saliente por cima. */
+.anel { position: relative; width: 84px; height: 84px; flex-shrink: 0; border-radius: 50%; }
+.anel svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.anel-trilho { fill: none; stroke: var(--neu-sombra); stroke-width: 7; opacity: .55; }
+.anel-arco { fill: none; stroke-width: 7; stroke-linecap: round; }
+.anel-centro {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; text-align: center;
+}
+.anel-numero { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1; }
+.anel-unidade { font-size: 9px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--texto-suave); margin-top: 4px; }
+
+.v-critico .anel-arco { stroke: var(--critico); }
+.v-critico .anel-numero { color: var(--critico); }
+.v-alerta .anel-arco { stroke: var(--alerta); }
+.v-alerta .anel-numero { color: var(--alerta); }
+.v-ok .anel-arco { stroke: var(--ok); }
+.v-ok .anel-numero { color: var(--ok); }
+
+/* ---------- Cartão do gráfico ---------- */
+.painel { border-radius: var(--r-painel); overflow: hidden; }
+.painel-cabecalho { padding: 26px 28px 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.painel-cabecalho h2 { font-family: var(--display); font-size: 20px; font-weight: 500; }
+.painel-cabecalho p { font-size: 12.5px; color: var(--texto-suave); margin-top: 6px; }
+.painel-corpo { padding: 6px 28px 28px; }
+
+.legenda { display: flex; align-items: center; gap: 18px; font-size: 11.5px; color: var(--texto-suave); flex-shrink: 0; }
+.legenda span { display: flex; align-items: center; gap: 7px; }
+.bolinha { width: 8px; height: 8px; border-radius: 50%; }
+
+.grafico { width: 100%; height: 240px; display: block; }
+.eixo-rotulo { font-size: 11px; fill: var(--texto-suave); font-family: var(--sans); }
+.grade-linha { stroke: var(--neu-sombra); stroke-width: 1; opacity: .5; }
+
+/* ---------- Nota de rodapé do mockup ---------- */
+.nota { margin-top: 46px; padding: 26px 30px; border-radius: var(--r-painel); }
+.nota h3 { font-family: var(--display); font-size: 16px; font-weight: 600; color: var(--gold-light); margin-bottom: 12px; }
+.nota p { font-size: 13px; color: var(--texto-suave); line-height: 1.75; max-width: 92ch; }
+.nota p + p { margin-top: 11px; }
+.nota code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: var(--off-white); }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .grade-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .conteudo { padding: 20px 20px 40px; }
+  .grade-2 { grid-template-columns: 1fr; }
+  .cabecalho h1 { font-size: 27px; }
+}
+@media (max-width: 620px) {
+  .grade-4 { grid-template-columns: 1fr; }
+  .perfil-nome, .perfil-papel { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="marca">
+      <div class="marca-selo relevo-suave">P</div>
+      <div>
+        <div class="marca-nome">Plena</div>
+        <div class="marca-sub">Contábil</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item ativo afundado">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Obrigações
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Documentos
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Mensagens
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16.11 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.2.61.77 1.03 1.42 1.03H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configurações
+      </div>
+    </nav>
+
+    <div class="nav-rodape afundado">
+      <strong>Assistente Plena</strong>
+      <p>Pergunte sobre vencimentos, guias e documentos. Resposta com base nos seus dados.</p>
+    </div>
+  </aside>
+
+  <!-- ================= CONTEÚDO ================= -->
+  <main class="conteudo">
+
+    <!-- Topbar -->
+    <div class="topbar relevo-suave">
+      <div class="busca afundado">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Buscar guia, documento ou competência
+      </div>
+      <div class="topbar-acoes">
+        <div class="icone-botao relevo-suave">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="ponto-notificacao"></span>
+        </div>
+        <div class="perfil relevo-suave">
+          <div class="avatar">RB</div>
+          <div>
+            <div class="perfil-nome">Ricardo Bertoldi</div>
+            <div class="perfil-papel">Bertoldi Comércio</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cabeçalho -->
+    <header class="cabecalho">
+      <h1>Olá, Ricardo.</h1>
+      <p>
+        Bertoldi Comércio de Alimentos
+        <span class="sep">•</span>
+        Simples Nacional
+        <span class="sep">•</span>
+        <span class="texto-critico">1 obrigação em atraso</span>
+      </p>
+    </header>
+
+    <!-- Indicadores -->
+    <section class="grade-4">
+      <div class="indicador relevo tom-critico">
+        <div class="indicador-topo">
+          <div class="indicador-rotulo">Total em aberto</div>
+          <div class="indicador-icone afundado">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+          </div>
+        </div>
+        <div class="indicador-valor">R$ 18.430,75</div>
+        <div class="indicador-detalhe">4 guia(s) pendente(s)</div>
+      </div>
+
+      <div class="indicador relevo tom-ok">
+        <div class="indicador-topo">
+          <div class="indicador-rotulo">Faturamento do mês</div>
+          <div class="indicador-icone afundado">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>
+          </div>
+        </div>
+        <div class="indicador-valor">R$ 214.900,00</div>
+        <div class="indicador-detalhe">+8,4% vs. mês anterior</div>
+      </div>
+
+      <div class="indicador relevo tom-neutro">
+        <div class="indicador-topo">
+          <div class="indicador-rotulo">Carga efetiva</div>
+          <div class="indicador-icone afundado">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>
+          </div>
+        </div>
+        <div class="indicador-valor">12,7%</div>
+        <div class="indicador-detalhe">sobre julho de 2026</div>
+      </div>
+
+      <div class="indicador relevo tom-critico">
+        <div class="indicador-topo">
+          <div class="indicador-rotulo">Em atraso</div>
+          <div class="indicador-icone afundado">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4M12 17h.01"/></svg>
+          </div>
+        </div>
+        <div class="indicador-valor">R$ 4.212,90</div>
+        <div class="indicador-detalhe">Regularize para evitar multa</div>
+      </div>
+    </section>
+
+    <!-- Próximos vencimentos -->
+    <section class="secao">
+      <div class="secao-cabecalho">
+        <div>
+          <h2>Próximos vencimentos</h2>
+          <p>Contagem regressiva até a data limite de cada guia.</p>
+        </div>
+        <div class="etiqueta critico afundado">Atenção necessária</div>
+      </div>
+
+      <div class="grade-2">
+        <!-- Atrasada -->
+        <article class="vencimento relevo v-critico">
+          <div class="anel afundado">
+            <svg viewBox="0 0 100 100">
+              <circle class="anel-trilho" cx="50" cy="50" r="40" />
+              <circle class="anel-arco" cx="50" cy="50" r="40"
+                      stroke-dasharray="251.3" stroke-dashoffset="0" />
+            </svg>
+            <div class="anel-centro">
+              <div>
+                <div class="anel-numero">-3</div>
+                <div class="anel-unidade">dias</div>
+              </div>
+            </div>
+          </div>
+          <div class="vencimento-info">
+            <div class="vencimento-titulo">FGTS</div>
+            <div class="vencimento-meta">Competência 07/2026 &nbsp;·&nbsp; venceu em 07/08/2026</div>
+            <div class="vencimento-valor">R$ 4.212,90</div>
+          </div>
+        </article>
+
+        <!-- Crítica, perto de vencer -->
+        <article class="vencimento relevo v-alerta">
+          <div class="anel afundado">
+            <svg viewBox="0 0 100 100">
+              <circle class="anel-trilho" cx="50" cy="50" r="40" />
+              <circle class="anel-arco" cx="50" cy="50" r="40"
+                      stroke-dasharray="251.3" stroke-dashoffset="188" />
+            </svg>
+            <div class="anel-centro">
+              <div>
+                <div class="anel-numero">4</div>
+                <div class="anel-unidade">dias</div>
+              </div>
+            </div>
+          </div>
+          <div class="vencimento-info">
+            <div class="vencimento-titulo">DAS do Simples Nacional</div>
+            <div class="vencimento-meta">Competência 07/2026 &nbsp;·&nbsp; vence em 20/08/2026</div>
+            <div class="vencimento-valor">R$ 9.874,15</div>
+          </div>
+        </article>
+
+        <!-- Tranquila -->
+        <article class="vencimento relevo v-ok">
+          <div class="anel afundado">
+            <svg viewBox="0 0 100 100">
+              <circle class="anel-trilho" cx="50" cy="50" r="40" />
+              <circle class="anel-arco" cx="50" cy="50" r="40"
+                      stroke-dasharray="251.3" stroke-dashoffset="88" />
+            </svg>
+            <div class="anel-centro">
+              <div>
+                <div class="anel-numero">12</div>
+                <div class="anel-unidade">dias</div>
+              </div>
+            </div>
+          </div>
+          <div class="vencimento-info">
+            <div class="vencimento-titulo">INSS (GPS)</div>
+            <div class="vencimento-meta">Competência 07/2026 &nbsp;·&nbsp; vence em 28/08/2026</div>
+            <div class="vencimento-valor">R$ 3.190,40</div>
+          </div>
+        </article>
+
+        <article class="vencimento relevo v-ok">
+          <div class="anel afundado">
+            <svg viewBox="0 0 100 100">
+              <circle class="anel-trilho" cx="50" cy="50" r="40" />
+              <circle class="anel-arco" cx="50" cy="50" r="40"
+                      stroke-dasharray="251.3" stroke-dashoffset="60" />
+            </svg>
+            <div class="anel-centro">
+              <div>
+                <div class="anel-numero">18</div>
+                <div class="anel-unidade">dias</div>
+              </div>
+            </div>
+          </div>
+          <div class="vencimento-info">
+            <div class="vencimento-titulo">ICMS, apuração mensal</div>
+            <div class="vencimento-meta">Competência 07/2026 &nbsp;·&nbsp; vence em 03/09/2026</div>
+            <div class="vencimento-valor">R$ 1.153,30</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Evolução financeira -->
+    <section class="secao">
+      <div class="painel relevo">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Evolução financeira</h2>
+            <p>Faturamento e carga tributária dos últimos 6 meses.</p>
+          </div>
+          <div class="legenda">
+            <span><i class="bolinha" style="background: var(--gold-light)"></i> Faturamento</span>
+            <span><i class="bolinha" style="background: var(--info)"></i> Impostos</span>
+          </div>
+        </div>
+        <div class="painel-corpo">
+          <svg class="grafico" viewBox="0 0 760 240" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="areaFat" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#e2c670" stop-opacity="0.30" />
+                <stop offset="100%" stop-color="#e2c670" stop-opacity="0" />
+              </linearGradient>
+              <linearGradient id="areaImp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.22" />
+                <stop offset="100%" stop-color="#60a5fa" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+
+            <!-- grade -->
+            <line class="grade-linha" x1="0" y1="40"  x2="760" y2="40" />
+            <line class="grade-linha" x1="0" y1="90"  x2="760" y2="90" />
+            <line class="grade-linha" x1="0" y1="140" x2="760" y2="140" />
+            <line class="grade-linha" x1="0" y1="190" x2="760" y2="190" />
+
+            <!-- faturamento -->
+            <path d="M40,150 L184,128 L328,138 L472,96 L616,84 L720,58 L720,200 L40,200 Z" fill="url(#areaFat)" />
+            <path d="M40,150 L184,128 L328,138 L472,96 L616,84 L720,58"
+                  fill="none" stroke="#e2c670" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+            <!-- impostos -->
+            <path d="M40,178 L184,170 L328,174 L472,158 L616,152 L720,142 L720,200 L40,200 Z" fill="url(#areaImp)" />
+            <path d="M40,178 L184,170 L328,174 L472,158 L616,152 L720,142"
+                  fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+            <!-- pontos -->
+            <circle cx="720" cy="58"  r="4.5" fill="#e2c670" />
+            <circle cx="720" cy="142" r="4.5" fill="#60a5fa" />
+
+            <!-- eixo x -->
+            <text class="eixo-rotulo" x="40"  y="226" text-anchor="middle">fev</text>
+            <text class="eixo-rotulo" x="184" y="226" text-anchor="middle">mar</text>
+            <text class="eixo-rotulo" x="328" y="226" text-anchor="middle">abr</text>
+            <text class="eixo-rotulo" x="472" y="226" text-anchor="middle">mai</text>
+            <text class="eixo-rotulo" x="616" y="226" text-anchor="middle">jun</text>
+            <text class="eixo-rotulo" x="720" y="226" text-anchor="middle">jul</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nota do mockup -->
+    <div class="nota afundado">
+      <h3>Sobre este mockup</h3>
+      <p>
+        Tela estática, sem JavaScript e sem interação. Serve só para comparar o Neumorphism com o
+        glassmorphism que está no painel real, lado a lado, na mesma tela e com os mesmos dados.
+      </p>
+      <p>
+        O fundo aqui é <code>#182741</code>, não o navy da marca <code>#0a1628</code>. Não é escolha
+        estética: o Neumorphism só existe se houver espaço para uma sombra mais clara que o fundo, e
+        num navy quase preto essa sombra não tem para onde subir. Adotar o Neumorphism significa
+        aceitar um painel visivelmente mais claro que a landing page.
+      </p>
+      <p>
+        A troca real: o relevo comunica estado muito melhor (veja o item ativo do menu e o trilho do
+        anel), mas o contraste de borda cai, e todo separador passa a depender de sombra. Fora do
+        modo escuro isso não muda; fora de tela boa, muda bastante.
+      </p>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

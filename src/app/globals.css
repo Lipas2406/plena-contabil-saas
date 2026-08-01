@@ -1,26 +1,220 @@
 @import "tailwindcss";
 
+/*
+  ============================================================
+  DESIGN SYSTEM — PLENA CONTÁBIL
+  ============================================================
+  Duas camadas de propósito:
+
+  1. MARCA: os valores literais (navy + dourado), extraídos da prévia
+     aprovada da landing page. Só mudam se a identidade mudar.
+
+  2. SEMÂNTICOS: nomes por função (superficie, acento, texto). É isto que
+     os componentes de `src/kernel/ui` usam.
+
+  Por que a separação importa: o kernel não pode saber o que é a Plena
+  (ver src/kernel/README.md). Um botão que referencia `--color-acento`
+  vai junto para o próximo projeto e assume a marca de lá. Um botão que
+  referencia `--color-gold` fica preso aqui para sempre.
+*/
+@theme {
+  /* ---------- Camada 1: marca ---------- */
+  --color-navy-deep: #070f1f;
+  --color-navy: #0a1628;
+  --color-navy-mid: #122040;
+  --color-gold: #c9a84c;
+  --color-gold-light: #e2c670;
+  --color-off-white: #f8f6f0;
+  --color-text-muted: #8a9bb5;
+
+  /* ---------- Camada 2: semânticos (usados pelo kernel) ---------- */
+  --color-fundo: var(--color-navy);
+  --color-fundo-profundo: var(--color-navy-deep);
+  --color-superficie: var(--color-navy-mid);
+  --color-acento: var(--color-gold);
+  --color-acento-claro: var(--color-gold-light);
+  --color-texto: var(--color-off-white);
+  --color-texto-suave: var(--color-text-muted);
+
+  /* Status: obrigação fiscal e documento */
+  --color-ok: #34d399;
+  --color-alerta: #e2c670;
+  --color-critico: #f87171;
+  --color-info: #60a5fa;
+  --color-wa: #25d366;
+
+  /* Raios: a spec pede 16px a 24px, nada de canto vivo */
+  --radius-card: 16px;
+  --radius-painel: 24px;
+  --radius-pill: 999px;
+
+  /* Tipografia: Playfair para título, Inter para texto */
+  --font-display: var(--fonte-display), Georgia, serif;
+  --font-sans: var(--fonte-sans), system-ui, sans-serif;
+}
+
+/*
+  Valores com alpha ficam fora do @theme de propósito: o Tailwind v4 gera um
+  utilitário para cada --color-*, e dezenas de variações translúcidas viram
+  ruído no autocomplete. Estes são consumidos via var() direto.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --vidro: rgba(255, 255, 255, 0.04);
+  --vidro-forte: rgba(255, 255, 255, 0.07);
+  --borda-suave: rgba(255, 255, 255, 0.08);
+  --borda-acento: rgba(201, 168, 76, 0.24);
+  --brilho-acento: rgba(201, 168, 76, 0.14);
+  --sombra-profunda: 0 24px 60px -12px rgba(0, 0, 0, 0.55);
+  --sombra-elevada: 0 32px 80px -16px rgba(0, 0, 0, 0.7);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+  Card virou link de âncora (indicador -> seção, "sem prazo" -> carteira etc.)
+  em 01/08/2026. Sem isto, clicar salta a página instantaneamente, e quem tem
+  menos prática digital perde a relação de causa entre o clique e o que
+  aconteceu na tela. `prefers-reduced-motion` abaixo já cancela isto de volta.
+*/
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(
+      120% 90% at 15% -10%,
+      rgba(18, 32, 64, 0.9) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      100% 80% at 100% 0%,
+      rgba(201, 168, 76, 0.07) 0%,
+      transparent 55%
+    ),
+    var(--color-fundo);
+  background-attachment: fixed;
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   UTILITÁRIOS DE SUPERFÍCIE
+   ============================================================ */
+
+/* Glassmorphism. O backdrop-filter é o que separa as seções da interface. */
+@utility vidro {
+  background: var(--vidro);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--borda-suave);
+}
+
+@utility vidro-forte {
+  background: var(--vidro-forte);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--borda-suave);
+}
+
+/* Texto em degradê dourado, para número de destaque e título de seção. */
+@utility texto-dourado {
+  background: linear-gradient(
+    135deg,
+    var(--color-gold-light) 0%,
+    var(--color-gold) 55%,
+    #a8873a 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================
+   ANIMAÇÕES
+   ============================================================ */
+
+/* Skeleton: brilho varrendo da esquerda para a direita. */
+@keyframes brilho-esqueleto {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.esqueleto {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.esqueleto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.09),
+    transparent
+  );
+  animation: brilho-esqueleto 1.6s infinite;
+}
+
+/* Pulso lento no anel de progresso quando o prazo está crítico. */
+@keyframes pulso-critico {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.pulso-critico {
+  animation: pulso-critico 2s ease-in-out infinite;
+}
+
+/* Barra de rolagem discreta, para não quebrar o dark mode. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 168, 76, 0.28) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.28);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.45);
+}
+
+/* Foco visível com a cor de acento: acessibilidade não é opcional. */
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/*
+  Respeita quem pediu menos movimento. A interface é pesada em animação,
+  então isto não é detalhe: é o que a torna utilizável para quem tem
+  sensibilidade vestibular.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

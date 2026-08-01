@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# dados persistidos localmente: cadastro real de cliente entra aqui a partir
+# de 01/08/2026, mesmo motivo do .env* acima, dado real não sobe pro repo.
+/.dados/
+
 # vercel
 .vercel
 
