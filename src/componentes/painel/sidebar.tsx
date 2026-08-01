@@ -22,19 +22,32 @@ interface ItemMenu {
   icone: LucideIcon;
   /** Contador de pendências. Só aparece se maior que zero. */
   contador?: number;
+  /** Rota que existe no menu mas ainda não foi construída. */
+  emBreve?: boolean;
 }
 
-// Sem contador fixo em Obrigações/Documentos: as duas rotas ainda são
-// "em construção", sem dado real por trás. Número que não corresponde a nada
-// e leva pra uma tela vazia é o tipo de coisa que assusta quem tem menos
-// prática digital ("cadê minha pendência?"). Volta quando essas telas
-// tiverem dado de verdade pra contar.
+/**
+ * Decisão de 01/08/2026 sobre as 4 rotas não construídas: elas **ficam** no
+ * menu, marcadas com "em breve".
+ *
+ * As três saídas possíveis eram tirar do menu, deixar como estava, ou marcar.
+ * Tirar esconderia o que o produto vai ser, e sobraria um menu de um item só,
+ * que parece sistema quebrado. Deixar como estava é o problema que acabamos de
+ * corrigir em outros quatro elementos: a pessoa descobre que a tela não existe
+ * **depois** de clicar.
+ *
+ * Marcar resolve os dois: o aviso aparece ANTES do clique, que é a regra de
+ * `affordance-falsa` no vault, e o menu continua comunicando o roteiro.
+ *
+ * Sem contador numérico em nenhuma delas: número que não corresponde a dado
+ * real é a mesma falha por outro caminho.
+ */
 const MENU: ItemMenu[] = [
   { href: "/painel", rotulo: "Dashboard", icone: LayoutDashboard },
-  { href: "/painel/obrigacoes", rotulo: "Obrigações", icone: Receipt },
-  { href: "/painel/documentos", rotulo: "Documentos", icone: FileText },
-  { href: "/painel/mensagens", rotulo: "Mensagens", icone: MessageSquare },
-  { href: "/painel/configuracoes", rotulo: "Configurações", icone: Settings },
+  { href: "/painel/obrigacoes", rotulo: "Obrigações", icone: Receipt, emBreve: true },
+  { href: "/painel/documentos", rotulo: "Documentos", icone: FileText, emBreve: true },
+  { href: "/painel/mensagens", rotulo: "Mensagens", icone: MessageSquare, emBreve: true },
+  { href: "/painel/configuracoes", rotulo: "Configurações", icone: Settings, emBreve: true },
 ];
 
 export function Sidebar() {
@@ -156,6 +169,12 @@ function ConteudoSidebar({ aoNavegar }: { aoNavegar?: () => void }) {
               </motion.span>
 
               <span className="flex-1">{item.rotulo}</span>
+
+              {item.emBreve && (
+                <span className="rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-texto-suave/80">
+                  em breve
+                </span>
+              )}
 
               {item.contador ? (
                 <span className="grid size-5 place-items-center rounded-full bg-acento text-[11px] font-bold text-navy-deep">
