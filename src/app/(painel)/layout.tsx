@@ -2,6 +2,8 @@ import { Sidebar } from "@/componentes/painel/sidebar";
 import { Topbar } from "@/componentes/painel/topbar";
 import { TransicaoPagina } from "@/kernel/ui/transicao";
 import { clienteLogado } from "@/dominio/sessao";
+import { avisosDoCliente } from "@/dominio/avisos";
+import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
 
 /**
  * Shell do painel do cliente.
@@ -18,6 +20,9 @@ export default function LayoutPainel({
   children: React.ReactNode;
 }) {
   const cliente = clienteLogado();
+  // Avisos derivados aqui, no servidor: a Topbar é componente de cliente e não
+  // deve carregar o domínio inteiro no bundle só para contar pendência.
+  const avisos = avisosDoCliente(cliente, listarProcessosDoCliente(cliente.id));
 
   return (
     <div className="min-h-dvh">
@@ -28,6 +33,7 @@ export default function LayoutPainel({
         <Topbar
           nomeUsuario={cliente.responsavel}
           empresa={cliente.nomeFantasia}
+          avisos={avisos}
         />
         <main className="p-4 lg:p-8">
           <TransicaoPagina>{children}</TransicaoPagina>

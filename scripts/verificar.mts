@@ -2,6 +2,9 @@
 import { consultarVencimentos } from "@/dominio/ia/ferramentas/consultar-vencimentos";
 import { classificarDocumento } from "@/dominio/ia/ferramentas/classificar-documento";
 import { listarObrigacoes } from "@/dominio/mocks/obrigacoes";
+import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
+import { CLIENTES } from "@/dominio/mocks/clientes";
+import { avisosDoCliente } from "@/dominio/avisos";
 import { hojeISO } from "@/kernel/datas";
 import { formatarTelefone, formatarCNPJ, formatarBRL, mesmoTextoBR } from "@/kernel/br";
 
@@ -70,6 +73,68 @@ checar("formatarCNPJ", formatarCNPJ("11222333000181") === "11.222.333/0001-81");
 // Comparado com mesmoTextoBR de propósito: o Intl usa U+00A0 e a igualdade
 // direta falha por causa de um caractere invisível.
 checar("formatarBRL centavos", mesmoTextoBR(formatarBRL(124000), "R$ 1.240,00"));
+
+/* ------------------------------------------------------------------
+   Avisos do painel do cliente.
+
+   Cobre o que a tela sozinha não cobre: a sessão é fixa num cliente só
+   (`sessao.ts`), então abrir o navegador testa um caminho de cada vez.
+   Aqui os três ramos rodam juntos, sem subir servidor.
+   ------------------------------------------------------------------ */
+const porId = (id: string) => {
+  const c = CLIENTES.find((x) => x.id === id);
+  if (!c) throw new Error(`cliente ${id} sumiu do mock`);
+  return c;
+};
+const avisosDe = (id: string) =>
+  avisosDoCliente(porId(id), listarProcessosDoCliente(id));
+
+// cli-001 tem etapa bloqueada (PGFN esperando as declarações em atraso).
+const avisosMarcio = avisosDe("cli-001");
+const travada = avisosMarcio.find((a) => a.id.startsWith("travada-"));
+checar("etapa bloqueada vira aviso crítico", travada?.tom === "critico");
+checar(
+  "aviso de etapa travada leva o MOTIVO, não só o rótulo",
+  Boolean(travada && travada.descricao.length > 0),
+);
+checar("aviso de etapa travada aponta para #processos", travada?.href === "#processos");
+
+// cli-003 tem cadastro incompleto e nenhuma etapa bloqueada.
+const avisosEdilaine = avisosDe("cli-003");
+const cadastro = avisosEdilaine.find((a) => a.id === "cadastro");
+checar("cadastro incompleto vira aviso", cadastro !== undefined);
+checar("aviso de cadastro aponta para #cadastro", cadastro?.href === "#cadastro");
+checar(
+  "cadastro incompleto lista os campos que faltam",
+  Boolean(cadastro?.descricao.includes("CNPJ")),
+);
+
+// Um aviso de cadastro por cliente, nunca um por campo: o contrário vira ruído
+// e esconde o que importa.
+checar(
+  "no máximo 1 aviso de cadastro por cliente",
+  avisosEdilaine.filter((a) => a.id === "cadastro").length === 1,
+);
+
+// Nenhum aviso pode nascer sem destino: o painel usa href para navegar.
+const todosOsAvisos = CLIENTES.flatMap((c) => avisosDe(c.id));
+checar(
+  "todo aviso tem href de âncora",
+  todosOsAvisos.every((a) => a.href.startsWith("#")),
+);
+checar(
+  "todo aviso tem título e descrição preenchidos",
+  todosOsAvisos.every((a) => a.titulo.length > 0 && a.descricao.length > 0),
+);
+// Id repetido quebraria a key do React e sumiria com aviso na tela.
+checar(
+  "ids de aviso são únicos por cliente",
+  CLIENTES.every((c) => {
+    const ids = avisosDe(c.id).map((a) => a.id);
+    return new Set(ids).size === ids.length;
+  }),
+);
+console.log(`   avisos derivados na carteira inteira: ${todosOsAvisos.length}`);
 
 console.log(falhas === 0 ? "\n== TUDO PASSOU ==" : `\n== ${falhas} FALHA(S) ==`);
 process.exit(falhas === 0 ? 0 : 1);

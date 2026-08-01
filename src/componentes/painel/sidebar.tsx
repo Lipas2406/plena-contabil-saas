@@ -10,7 +10,6 @@ import {
   MessageSquare,
   Receipt,
   Settings,
-  LogOut,
   Menu,
   X,
   type LucideIcon,
@@ -168,15 +167,16 @@ function ConteudoSidebar({ aoNavegar }: { aoNavegar?: () => void }) {
         })}
       </nav>
 
-      <div className="border-t border-[var(--borda-suave)] p-3">
-        <button
-          type="button"
-          className="flex w-full items-center gap-3 rounded-[var(--radius-card)] px-3 py-2.5 text-sm font-medium text-texto-suave transition-colors hover:bg-white/5 hover:text-critico"
-        >
-          <LogOut className="size-[18px]" aria-hidden />
-          Sair
-        </button>
-      </div>
+      {/*
+        O botão "Sair" foi removido em 01/08/2026. Não existe autenticação:
+        `sessao.ts` tem o cliente logado numa constante, então não há sessão
+        para encerrar e o botão não fazia nada. Num sistema que será usado por
+        pessoas com pouca prática digital, clicar em "Sair" e continuar logado
+        não é um detalhe, é motivo para desconfiar do resto da tela.
+
+        Volta junto com a autenticação (etapa A.2 do cronograma no vault),
+        provavelmente dentro de um menu de conta ancorado no avatar da Topbar.
+      */}
     </>
   );
 }
