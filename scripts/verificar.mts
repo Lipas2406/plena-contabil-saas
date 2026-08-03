@@ -5,8 +5,13 @@ import { listarObrigacoes } from "@/dominio/mocks/obrigacoes";
 import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
 import { CLIENTES, cadastroIncompleto } from "@/dominio/mocks/clientes";
 import { avisosDoCliente } from "@/dominio/avisos";
+import {
+  fundirCliente,
+  type EdicaoClienteEntrada,
+} from "@/dominio/armazenamento-clientes";
 import { hojeISO } from "@/kernel/datas";
 import { formatarTelefone, formatarCNPJ, formatarBRL, mesmoTextoBR } from "@/kernel/br";
+
 
 let falhas = 0;
 const checar = (nome: string, ok: boolean) => {
@@ -229,6 +234,46 @@ checar(
 console.log(
   `   etapas: ${todasAsEtapas.length} no total, ${afirmamAndamento.length} afirmam andamento e pedem confirmação`,
 );
+
+// ---------------------------------------------------------------------------
+// Edição de cadastro (02/08/2026).
+//
+// A tela aponta o que falta em cada cliente; até hoje não havia onde digitar.
+// O risco desta função não é falhar, é APAGAR: a contadora completa uma lacuna
+// de cada vez, conforme o cliente responde, e um formulário parcial não pode
+// levar embora o que já estava gravado.
+// ---------------------------------------------------------------------------
+{
+  const base = CLIENTES.find((c) => c.id === "cli-001")!;
+  const aplicar = (entrada: EdicaoClienteEntrada) =>
+    fundirCliente(base, entrada as EdicaoClienteEntrada);
+
+  checar(
+    "campo ausente na entrada não mexe no valor gravado",
+    aplicar({ email: "novo@exemplo.com" }).atividade === base.atividade,
+  );
+  checar(
+    "campo preenchido substitui o anterior",
+    aplicar({ email: "novo@exemplo.com" }).email === "novo@exemplo.com",
+  );
+  checar(
+    "string vazia vira null, não texto vazio",
+    aplicar({ atividade: "   " }).atividade === null,
+  );
+  checar(
+    "telefone é gravado só com dígitos",
+    aplicar({ telefone: "(11) 98877-6655" }).telefone === "11988776655",
+  );
+  checar(
+    "editar não inventa clienteDesde",
+    aplicar({ email: "a@b.com" }).clienteDesde === base.clienteDesde,
+  );
+  const pf = CLIENTES.find((c) => c.tipoPessoa === "PF")!;
+  checar(
+    "cliente PF não ganha CNPJ por edição",
+    fundirCliente(pf, { cnpj: "11222333000181" }).cnpj === null,
+  );
+}
 
 console.log(falhas === 0 ? "\n== TUDO PASSOU ==" : `\n== ${falhas} FALHA(S) ==`);
 process.exit(falhas === 0 ? 0 : 1);

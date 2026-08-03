@@ -166,3 +166,85 @@ export function adicionarCliente(entrada: NovoClienteEntrada): Cliente {
   gravar([...lista, cliente]);
   return cliente;
 }
+
+/**
+ * Completa ou corrige o cadastro de um cliente que já existe.
+ *
+ * Existe porque a tela aponta o que falta ("Falta razão social, CNPJ,
+ * e-mail...") e, até 02/08/2026, não havia onde digitar: o painel virava
+ * formulário de coleta sem campo. Só `adicionarCliente` existia.
+ *
+ * Campo ausente na entrada é **campo não mexido**, e string vazia vira `null`.
+ * A distinção importa: a contadora costuma preencher uma lacuna de cada vez,
+ * conforme o cliente responde, e um formulário parcial não pode apagar o que
+ * já estava lá. `null` continua significando "ainda não informado".
+ *
+ * O que NÃO se edita por aqui: `id`, `clienteDesde` e `tipoPessoa`. Os dois
+ * primeiros são história, não cadastro. O terceiro troca quais campos fazem
+ * sentido (CPF x CNPJ, regime) e mudaria o significado dos dados já gravados,
+ * então é caso de cadastro novo, não de edição.
+ */
+export type EdicaoClienteEntrada = Partial<
+  Omit<NovoClienteEntrada, "tipoPessoa">
+>;
+
+/**
+ * Funde o cadastro atual com o que a contadora digitou. Função PURA: não lê
+ * nem grava disco.
+ *
+ * Está separada de `atualizarCliente` de propósito, pelo mesmo motivo das
+ * ferramentas de IA terem `.puro`: o que precisa de teste é a regra de fusão
+ * (o que mantém, o que substitui, o que vira lacuna), e o portão não pode
+ * depender de estado em disco nem sujar a carteira real.
+ *
+ * Testar uma CÓPIA da regra no script de verificação seria pior que não
+ * testar: passaria a dar OK mesmo depois de esta função mudar.
+ */
+export function fundirCliente(
+  atual: Cliente,
+  entrada: EdicaoClienteEntrada,
+): Cliente {
+  // `undefined` = campo não veio no formulário, mantém o que estava.
+  // `null` ou string vazia = a contadora apagou de propósito, vira lacuna.
+  const texto = (v: string | null | undefined, anterior: string | null) =>
+    v === undefined ? anterior : (v?.trim() || null);
+  const digitos = (v: string | null | undefined, anterior: string | null) =>
+    v === undefined ? anterior : v?.trim() ? apenasDigitos(v) : null;
+
+  return {
+    ...atual,
+    razaoSocial: texto(entrada.razaoSocial, atual.razaoSocial),
+    nomeFantasia: entrada.nomeFantasia?.trim() || atual.nomeFantasia,
+    // CNPJ e CPF seguem o tipo de pessoa que o cliente já tem: PF não ganha
+    // CNPJ por edição, e PJ não ganha CPF.
+    cnpj: atual.tipoPessoa === "PJ" ? digitos(entrada.cnpj, atual.cnpj) : null,
+    cpf: atual.tipoPessoa === "PF" ? digitos(entrada.cpf, atual.cpf) : null,
+    atividade: texto(entrada.atividade, atual.atividade),
+    naturezaJuridica:
+      atual.tipoPessoa === "PJ"
+        ? (entrada.naturezaJuridica ?? atual.naturezaJuridica)
+        : null,
+    porte:
+      atual.tipoPessoa === "PJ" ? (entrada.porte ?? atual.porte) : null,
+    regime:
+      atual.tipoPessoa === "PJ" ? (entrada.regime ?? atual.regime) : null,
+    responsavel: texto(entrada.responsavel, atual.responsavel),
+    email: texto(entrada.email, atual.email),
+    telefone: digitos(entrada.telefone, atual.telefone),
+  };
+}
+
+export function atualizarCliente(
+  id: string,
+  entrada: EdicaoClienteEntrada,
+): Cliente {
+  const lista = listarClientes();
+  const indice = lista.findIndex((c) => c.id === id);
+  if (indice < 0) throw new Error(`Cliente ${id} não existe.`);
+
+  const atualizado = fundirCliente(lista[indice], entrada);
+  const nova = [...lista];
+  nova[indice] = atualizado;
+  gravar(nova);
+  return atualizado;
+}

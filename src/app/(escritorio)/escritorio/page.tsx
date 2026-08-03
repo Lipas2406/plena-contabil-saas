@@ -128,7 +128,10 @@ export default function PaginaEscritorio() {
           </div>
         }
       >
-        <ListaClientes carteira={carteira} />
+        <ListaClientes
+          carteira={carteira}
+          somenteLeitura={carteiraSomenteLeitura()}
+        />
       </Secao>
 
       <Secao

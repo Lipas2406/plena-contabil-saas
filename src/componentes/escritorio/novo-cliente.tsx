@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { UserPlus } from "lucide-react";
+import { Pencil, UserPlus } from "lucide-react";
 import { Botao } from "@/kernel/ui/botao";
 import { Modal } from "@/kernel/ui/modal";
 import { Campo } from "@/kernel/ui/campo";
 import { cn } from "@/kernel/cn";
-import { criarCliente } from "@/dominio/acoes/clientes";
+import { criarCliente, editarCliente } from "@/dominio/acoes/clientes";
 import type {
+  Cliente,
   NaturezaJuridica,
   PorteEmpresa,
   RegimeTributario,
@@ -44,6 +45,24 @@ const FORM_VAZIO = {
   telefone: "",
 };
 
+/** Cliente gravado vira formulário. `null` vira campo vazio. */
+function formDoCliente(c: Cliente): typeof FORM_VAZIO {
+  return {
+    nomeFantasia: c.nomeFantasia,
+    razaoSocial: c.razaoSocial ?? "",
+    tipoPessoa: c.tipoPessoa,
+    cnpj: c.cnpj ?? "",
+    cpf: c.cpf ?? "",
+    atividade: c.atividade ?? "",
+    naturezaJuridica: c.naturezaJuridica ?? "",
+    porte: c.porte ?? "",
+    regime: c.regime ?? "",
+    responsavel: c.responsavel ?? "",
+    email: c.email ?? "",
+    telefone: c.telefone ?? "",
+  };
+}
+
 /**
  * Botão + modal de cadastro de cliente novo.
  *
@@ -58,9 +77,21 @@ const FORM_VAZIO = {
  * botão: botão que aceita o clique e perde o dado é a affordance falsa que
  * este painel já removeu quatro vezes.
  */
-export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boolean }) {
+export function NovoCliente({
+  somenteLeitura = false,
+  cliente,
+  aoSalvar,
+}: {
+  somenteLeitura?: boolean;
+  /** Presente = modo edição. Ausente = cadastro novo. */
+  cliente?: Cliente;
+  aoSalvar?: () => void;
+}) {
+  const edicao = cliente !== undefined;
   const [aberto, setAberto] = useState(false);
-  const [form, setForm] = useState(FORM_VAZIO);
+  const [form, setForm] = useState(() =>
+    cliente ? formDoCliente(cliente) : FORM_VAZIO,
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciarTransicao] = useTransition();
 
@@ -68,7 +99,7 @@ export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boole
     if (pendente) return;
     setAberto(false);
     setErro(null);
-    setForm(FORM_VAZIO);
+    setForm(cliente ? formDoCliente(cliente) : FORM_VAZIO);
   }
 
   function enviar() {
@@ -79,10 +110,11 @@ export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boole
     setErro(null);
 
     iniciarTransicao(async () => {
-      const resultado = await criarCliente({
+      // Em edição manda o formulário inteiro: os campos vieram preenchidos com
+      // o que já estava gravado, então nada é apagado sem a contadora apagar.
+      const campos = {
         nomeFantasia: form.nomeFantasia,
         razaoSocial: form.razaoSocial || null,
-        tipoPessoa: form.tipoPessoa,
         cnpj: form.tipoPessoa === "PJ" ? form.cnpj || null : null,
         cpf: form.tipoPessoa === "PF" ? form.cpf || null : null,
         atividade: form.atividade || null,
@@ -93,21 +125,25 @@ export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boole
         responsavel: form.responsavel || null,
         email: form.email || null,
         telefone: form.telefone || null,
-      });
+      };
+      const resultado = cliente
+        ? await editarCliente(cliente.id, campos)
+        : await criarCliente({ ...campos, tipoPessoa: form.tipoPessoa });
 
       if (!resultado.ok) {
         setErro(resultado.erro ?? "Não deu para salvar. Tenta de novo.");
         return;
       }
       fechar();
+      aoSalvar?.();
     });
   }
 
   if (somenteLeitura) {
     return (
       <p className="text-xs text-texto-suave">
-        Cadastro desativado nesta demonstração publicada. Rodando local, ele
-        salva de verdade.
+        {edicao ? "Edição desativada" : "Cadastro desativado"} nesta
+        demonstração publicada. Rodando local, salva de verdade.
       </p>
     );
   }
@@ -115,19 +151,29 @@ export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boole
   return (
     <>
       <Botao
-        variante="primario"
+        variante={edicao ? "fantasma" : "primario"}
         tamanho="sm"
         onClick={() => setAberto(true)}
-        iconeEsquerda={<UserPlus className="size-4" aria-hidden />}
+        iconeEsquerda={
+          edicao ? (
+            <Pencil className="size-4" aria-hidden />
+          ) : (
+            <UserPlus className="size-4" aria-hidden />
+          )
+        }
       >
-        Novo cliente
+        {edicao ? "Completar cadastro" : "Novo cliente"}
       </Botao>
 
       <Modal
         aberto={aberto}
         aoFechar={fechar}
-        titulo="Novo cliente"
-        descricao='O que faltar fica marcado como "a informar". Não precisa preencher tudo agora.'
+        titulo={edicao ? `Cadastro de ${cliente!.nomeFantasia}` : "Novo cliente"}
+        descricao={
+          edicao
+            ? 'Preencha o que o cliente informou. O que ficar em branco continua como "a informar", e nada some sem você apagar.'
+            : 'O que faltar fica marcado como "a informar". Não precisa preencher tudo agora.'
+        }
         rodape={
           <>
             <Botao variante="fantasma" onClick={fechar} disabled={pendente}>
@@ -139,7 +185,7 @@ export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boole
               carregando={pendente}
               disabled={!form.nomeFantasia.trim()}
             >
-              Salvar cliente
+              {edicao ? "Salvar alterações" : "Salvar cliente"}
             </Botao>
           </>
         }
@@ -167,29 +213,46 @@ export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boole
             onChange={(e) =>
               setForm((f) => ({ ...f, razaoSocial: e.target.value }))
             }
-            dica="Em branco, repete o nome fantasia"
+            dica={
+              edicao
+                ? "Em branco, continua como lacuna a preencher"
+                : 'Em branco, fica como "a informar"'
+            }
           />
 
-          <fieldset className="flex gap-5">
-            <legend className="mb-1.5 text-sm font-medium text-texto-suave">
-              Tipo
-            </legend>
-            {(["PJ", "PF"] as const).map((tipo) => (
-              <label
-                key={tipo}
-                className="flex items-center gap-2 text-sm text-texto"
-              >
-                <input
-                  type="radio"
-                  name="tipoPessoa"
-                  checked={form.tipoPessoa === tipo}
-                  onChange={() => setForm((f) => ({ ...f, tipoPessoa: tipo }))}
-                  className="accent-acento"
-                />
-                {tipo === "PJ" ? "Pessoa jurídica" : "Pessoa física"}
-              </label>
-            ))}
-          </fieldset>
+          {edicao ? (
+            /* Trocar PJ por PF muda quais campos existem (CNPJ x CPF, regime) e
+               o significado do que já está gravado. Radio ativo aqui seria
+               promessa falsa: a ação de edição ignora esse campo de propósito. */
+            <p className="text-sm text-texto-suave">
+              Tipo:{" "}
+              <span className="text-texto">
+                {form.tipoPessoa === "PJ" ? "Pessoa jurídica" : "Pessoa física"}
+              </span>
+              . Para mudar, cadastre de novo.
+            </p>
+          ) : (
+            <fieldset className="flex gap-5">
+              <legend className="mb-1.5 text-sm font-medium text-texto-suave">
+                Tipo
+              </legend>
+              {(["PJ", "PF"] as const).map((tipo) => (
+                <label
+                  key={tipo}
+                  className="flex items-center gap-2 text-sm text-texto"
+                >
+                  <input
+                    type="radio"
+                    name="tipoPessoa"
+                    checked={form.tipoPessoa === tipo}
+                    onChange={() => setForm((f) => ({ ...f, tipoPessoa: tipo }))}
+                    className="accent-acento"
+                  />
+                  {tipo === "PJ" ? "Pessoa jurídica" : "Pessoa física"}
+                </label>
+              ))}
+            </fieldset>
+          )}
 
           {form.tipoPessoa === "PJ" ? (
             <Campo

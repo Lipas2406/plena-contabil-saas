@@ -12,6 +12,7 @@ import { formatarCNPJ } from "@/kernel/br";
 import { formatarData } from "@/kernel/datas";
 import { cn } from "@/kernel/cn";
 import { progressoDoProcesso } from "@/dominio/tipos";
+import { NovoCliente } from "@/componentes/escritorio/novo-cliente";
 import type { ClienteNaCarteira, SinalCliente } from "@/dominio/escritorio";
 
 const SEMAFORO: Record<
@@ -36,7 +37,13 @@ const SEMAFORO: Record<
  * para o kernel porque só existe um uso; na segunda tela que precisar, vira
  * componente compartilhado.
  */
-export function ListaClientes({ carteira }: { carteira: ClienteNaCarteira[] }) {
+export function ListaClientes({
+  carteira,
+  somenteLeitura = false,
+}: {
+  carteira: ClienteNaCarteira[];
+  somenteLeitura?: boolean;
+}) {
   const [abertoId, setAbertoId] = useState<string | null>(null);
   const reduzir = useReducedMotion();
   const selecionado = carteira.find((c) => c.cliente.id === abertoId) ?? null;
@@ -148,6 +155,7 @@ export function ListaClientes({ carteira }: { carteira: ClienteNaCarteira[] }) {
               <DetalheCliente
                 item={selecionado}
                 aoFechar={() => setAbertoId(null)}
+                somenteLeitura={somenteLeitura}
               />
             </motion.aside>
           </>
@@ -160,9 +168,11 @@ export function ListaClientes({ carteira }: { carteira: ClienteNaCarteira[] }) {
 function DetalheCliente({
   item,
   aoFechar,
+  somenteLeitura,
 }: {
   item: ClienteNaCarteira;
   aoFechar: () => void;
+  somenteLeitura: boolean;
 }) {
   const c = item.cliente;
   const s = SEMAFORO[item.sinal];
@@ -192,11 +202,17 @@ function DetalheCliente({
         </button>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <Etiqueta tom={s.tom}>{s.rotulo}</Etiqueta>
         {item.diasSemFechar !== null && (
           <Etiqueta tom="neutro">aberto há {item.diasSemFechar} dias</Etiqueta>
         )}
+      </div>
+
+      {/* O painel aponta o que falta logo abaixo; o botão fica junto para a
+          correção acontecer onde a lacuna aparece, e não em outra tela. */}
+      <div className="mt-3">
+        <NovoCliente cliente={c} somenteLeitura={somenteLeitura} />
       </div>
 
       <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[var(--borda-suave)] pt-5 text-sm">
