@@ -2,7 +2,12 @@
 import { consultarVencimentos } from "@/dominio/ia/ferramentas/consultar-vencimentos";
 import { classificarDocumento } from "@/dominio/ia/ferramentas/classificar-documento";
 import { listarObrigacoes } from "@/dominio/mocks/obrigacoes";
-import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
+import {
+  aplicarEncerramento,
+  listarProcessosDoCliente,
+} from "@/dominio/armazenamento-processos";
+import { listarProcessos as listarProcessosDoEscritorio } from "@/dominio/mocks/processos";
+import { progressoDoProcesso } from "@/dominio/tipos";
 import { CLIENTES, cadastroIncompleto } from "@/dominio/mocks/clientes";
 import { avisosDoCliente } from "@/dominio/avisos";
 import {
@@ -272,6 +277,48 @@ console.log(
   checar(
     "cliente PF não ganha CNPJ por edição",
     fundirCliente(pf, { cnpj: "11222333000181" }).cnpj === null,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Encerramento de processo (03/08/2026).
+//
+// A carteira é quase toda trabalho com fim (5 dos 6 clientes), então sem
+// encerrar ela só cresce. O risco aqui é o oposto do risco da edição: não é
+// apagar, é ESCONDER. Encerrado tem que sair do que pede trabalho e continuar
+// achável, com a data.
+// ---------------------------------------------------------------------------
+{
+  const hoje = new Date();
+  const abertos = listarProcessosDoEscritorio(hoje);
+
+  checar(
+    "nenhum processo nasce encerrado na semente",
+    abertos.every((p) => p.encerradoEm === null),
+  );
+
+  // Chama a função REAL que o armazenamento usa, não uma cópia dela.
+  const alvo = abertos.find((p) => p.etapas.some((e) => e.status !== "concluida"))!;
+  const encerrado = aplicarEncerramento(alvo, "2026-08-03");
+
+  checar(
+    "encerrar zera as etapas em aberto do processo",
+    encerrado.etapas.every((e) => e.status === "concluida"),
+  );
+  checar(
+    "encerrar CONFIRMA o andamento, que deixa de ser estimativa",
+    encerrado.etapas.every((e) => e.statusConfirmado === true),
+  );
+  checar(
+    "encerrado guarda a data, não some da carteira",
+    encerrado.encerradoEm !== null,
+  );
+  checar(
+    "progresso de processo encerrado é 100%",
+    progressoDoProcesso(encerrado) === 1,
+  );
+  console.log(
+    `   processos na carteira: ${abertos.length}, todos em aberto na semente`,
   );
 }
 

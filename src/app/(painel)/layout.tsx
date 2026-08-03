@@ -3,7 +3,7 @@ import { Topbar } from "@/componentes/painel/topbar";
 import { TransicaoPagina } from "@/kernel/ui/transicao";
 import { clienteLogado } from "@/dominio/sessao";
 import { avisosDoCliente } from "@/dominio/avisos";
-import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
+import { listarProcessosDoCliente } from "@/dominio/armazenamento-processos";
 
 /**
  * Shell do painel do cliente.

@@ -1,5 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
+import {
+  ArmazenamentoSomenteLeituraError,
+  gravarJSON,
+  lerJSON,
+  podeGravar,
+} from "@/dominio/armazenamento-base";
 import { apenasDigitos } from "@/kernel/br";
 import { CLIENTES as SEED } from "@/dominio/mocks/clientes";
 import type {
@@ -26,35 +30,6 @@ import type {
  * banco, só este arquivo muda: nenhuma tela importa `fs`.
  */
 
-const CAMINHO = path.join(process.cwd(), ".dados", "clientes.json");
-
-/**
- * Onde este arquivo roda, dá para gravar?
- *
- * Em hospedagem serverless (Vercel e parecidos) o diretório da aplicação é
- * SOMENTE LEITURA, e `/.dados/` está no `.gitignore`, então lá o arquivo não
- * existe e não pode ser criado. Sem este teste, a primeira leitura derruba a
- * aplicação inteira com `EROFS`, e não só o cadastro: painel, escritório e
- * sessão passam por aqui.
- *
- * Testa gravando de verdade, uma vez por processo. Deduzir pela variável de
- * ambiente (`process.env.VERCEL`) seria adivinhar o comportamento do
- * provedor; tentar escrever responde a pergunta que realmente importa.
- */
-let gravavelCache: boolean | null = null;
-
-function podeGravar(): boolean {
-  if (gravavelCache !== null) return gravavelCache;
-  try {
-    fs.mkdirSync(path.dirname(CAMINHO), { recursive: true });
-    fs.accessSync(path.dirname(CAMINHO), fs.constants.W_OK);
-    gravavelCache = true;
-  } catch {
-    gravavelCache = false;
-  }
-  return gravavelCache;
-}
-
 /**
  * `true` quando a carteira não pode receber cadastro novo neste ambiente.
  *
@@ -62,34 +37,23 @@ function podeGravar(): boolean {
  * o clique e perde o dado é a affordance falsa que este projeto já removeu
  * quatro vezes. Ver `conhecimento/wiki/affordance-falsa` no vault.
  */
+const ARQUIVO = "clientes.json";
+
 export function carteiraSomenteLeitura(): boolean {
   return !podeGravar();
 }
 
 function lerOuSemear(): Cliente[] {
-  if (fs.existsSync(CAMINHO)) {
-    return JSON.parse(fs.readFileSync(CAMINHO, "utf-8")) as Cliente[];
-  }
+  const gravado = lerJSON<Cliente[]>(ARQUIVO);
+  if (gravado) return gravado;
   // Sem arquivo e sem permissão de escrita: a demonstração roda com a semente
   // em memória. Perde cadastro novo, não perde a carteira.
   if (!podeGravar()) return SEED;
-
-  fs.writeFileSync(CAMINHO, JSON.stringify(SEED, null, 2), "utf-8");
+  gravarJSON(ARQUIVO, SEED);
   return SEED;
 }
 
-/** Erro de escrita bloqueada pelo ambiente, para a UI distinguir de erro de dado. */
-export class CarteiraSomenteLeituraError extends Error {
-  constructor() {
-    super("Esta demonstração está hospedada em ambiente somente leitura.");
-    this.name = "CarteiraSomenteLeituraError";
-  }
-}
-
-function gravar(lista: Cliente[]) {
-  if (!podeGravar()) throw new CarteiraSomenteLeituraError();
-  fs.writeFileSync(CAMINHO, JSON.stringify(lista, null, 2), "utf-8");
-}
+const gravar = (lista: Cliente[]) => gravarJSON(ARQUIVO, lista);
 
 export function listarClientes(): Cliente[] {
   return lerOuSemear();
@@ -248,3 +212,6 @@ export function atualizarCliente(
   gravar(nova);
   return atualizado;
 }
+
+/** Nome antigo, mantido para quem já importava. */
+export { ArmazenamentoSomenteLeituraError as CarteiraSomenteLeituraError };

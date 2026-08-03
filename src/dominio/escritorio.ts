@@ -2,7 +2,7 @@ import { diasAte } from "@/kernel/datas";
 import { cadastroIncompleto } from "@/dominio/mocks/clientes";
 import { listarClientes } from "@/dominio/armazenamento-clientes";
 import { listarObrigacoes } from "@/dominio/mocks/obrigacoes";
-import { listarProcessos } from "@/dominio/mocks/processos";
+import { listarProcessos } from "@/dominio/armazenamento-processos";
 import { documentosAguardando } from "@/dominio/mocks/documentos";
 import type { Cliente, Processo, TipoAtendimento } from "@/dominio/tipos";
 
@@ -74,8 +74,7 @@ export function montarCarteira(hoje = new Date()): ClienteNaCarteira[] {
     } else if (travadas.length > 0) {
       sinal = "critico";
       motivo =
-        travadas[0].observacao ??
-        `${travadas.length} etapa(s) travada(s)`;
+        travadas[0].observacao ?? `${travadas.length} etapa(s) travada(s)`;
     } else if (faltando.length > 0) {
       sinal = "atencao";
       motivo = `Falta ${faltando.join(", ")}`;
@@ -140,25 +139,31 @@ export interface TarefaEscritorio {
 export function tarefasDoEscritorio(hoje = new Date()): TarefaEscritorio[] {
   const porId = new Map(listarClientes().map((c) => [c.id, c]));
 
-  return listarProcessos(hoje).flatMap((processo) =>
-    processo.etapas.map((etapa): TarefaEscritorio => ({
-      id: etapa.id,
-      coluna:
-        etapa.status === "concluida"
-          ? "concluido"
-          : etapa.status === "em-andamento"
-            ? "em-progresso"
-            : "a-fazer",
-      rotulo: etapa.rotulo,
-      clienteId: processo.clienteId,
-      clienteNome:
-        porId.get(processo.clienteId)?.nomeFantasia ?? processo.clienteId,
-      processoTitulo: processo.titulo,
-      tipo: processo.tipo,
-      travada: etapa.status === "bloqueada",
-      observacao: etapa.observacao,
-    })),
-  );
+  // Processo encerrado sai do quadro. O quadro é mesa de trabalho, não
+  // arquivo: se ficasse, a coluna "concluído" cresceria para sempre e a tela
+  // deixaria de responder "o que está na minha mão hoje". O trabalho concluído
+  // continua visível no detalhe do cliente, com a data.
+  return listarProcessos(hoje)
+    .filter((p) => p.encerradoEm === null)
+    .flatMap((processo) =>
+      processo.etapas.map((etapa): TarefaEscritorio => ({
+        id: etapa.id,
+        coluna:
+          etapa.status === "concluida"
+            ? "concluido"
+            : etapa.status === "em-andamento"
+              ? "em-progresso"
+              : "a-fazer",
+        rotulo: etapa.rotulo,
+        clienteId: processo.clienteId,
+        clienteNome:
+          porId.get(processo.clienteId)?.nomeFantasia ?? processo.clienteId,
+        processoTitulo: processo.titulo,
+        tipo: processo.tipo,
+        travada: etapa.status === "bloqueada",
+        observacao: etapa.observacao,
+      })),
+    );
 }
 
 /* ============================================================

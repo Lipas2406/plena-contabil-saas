@@ -159,6 +159,14 @@ export interface Processo {
   abertoEm: string;
   /** Prazo legal ou combinado, quando existe. */
   prazo: string | null;
+  /**
+   * ISO 8601. Preenchido quando a contadora deu o trabalho por concluído.
+   *
+   * Encerrado NÃO some da carteira: sai das contagens de "em aberto" e passa a
+   * mostrar a data. Quem concluiu uma abertura de empresa ainda precisa achar
+   * aquele trabalho depois.
+   */
+  encerradoEm: string | null;
 }
 
 /** Fração concluída de 0 a 1. Etapa bloqueada não conta como andamento. */

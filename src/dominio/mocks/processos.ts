@@ -16,7 +16,7 @@ import type { Processo } from "@/dominio/tipos";
  * fixa, senão o mock envelhece. Ver `src/kernel/mock.ts`.
  */
 
-type ProcessoSeed = Omit<Processo, "abertoEm" | "prazo"> & {
+type ProcessoSeed = Omit<Processo, "abertoEm" | "prazo" | "encerradoEm"> & {
   /** Deslocamento em meses a partir do mês corrente. */
   abertoOffsetMeses: number;
   abertoDia: number;
@@ -212,6 +212,9 @@ export function listarProcessos(hoje = new Date()): Processo[] {
       ...base
     }): Processo => ({
       ...base,
+      // A semente nunca nasce encerrada: encerrar é decisão da contadora e
+      // vive em `armazenamento-processos.ts`, não aqui.
+      encerradoEm: null,
       abertoEm: dataRelativa(abertoOffsetMeses, abertoDia, hoje),
       prazo:
         prazoOffsetMeses === null

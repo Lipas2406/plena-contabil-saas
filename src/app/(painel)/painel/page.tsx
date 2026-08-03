@@ -12,7 +12,7 @@ import { formatarBRL } from "@/kernel/br";
 import { clienteLogado, primeiroNome } from "@/dominio/sessao";
 import { cadastroIncompleto } from "@/dominio/mocks/clientes";
 import { listarObrigacoesDoCliente } from "@/dominio/mocks/obrigacoes";
-import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
+import { listarProcessosDoCliente } from "@/dominio/armazenamento-processos";
 import { CartaoProcesso } from "@/componentes/painel/cartao-processo";
 import { CartaoVencimento } from "@/componentes/painel/cartao-vencimento";
 import { ResumoNumerico } from "@/componentes/painel/resumo-numerico";

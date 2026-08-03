@@ -12,6 +12,7 @@ import { formatarCNPJ } from "@/kernel/br";
 import { formatarData } from "@/kernel/datas";
 import { cn } from "@/kernel/cn";
 import { progressoDoProcesso } from "@/dominio/tipos";
+import { EncerrarProcesso } from "@/componentes/escritorio/encerrar-processo";
 import { NovoCliente } from "@/componentes/escritorio/novo-cliente";
 import type { ClienteNaCarteira, SinalCliente } from "@/dominio/escritorio";
 
@@ -283,6 +284,11 @@ function DetalheCliente({
                 aberto em {formatarData(processo.abertoEm)}
                 {processo.prazo && ` · prazo ${formatarData(processo.prazo)}`}
               </p>
+
+              <EncerrarProcesso
+                processo={processo}
+                somenteLeitura={somenteLeitura}
+              />
 
               <ul className="mt-3 space-y-1.5">
                 {processo.etapas
