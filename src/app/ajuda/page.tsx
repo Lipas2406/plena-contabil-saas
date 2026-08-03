@@ -1,10 +1,22 @@
 import Link from "next/link";
 import { ArrowLeft, ChevronDown } from "lucide-react";
+import { carteiraSomenteLeitura } from "@/dominio/armazenamento-clientes";
 
 export const metadata = {
   title: "Como usar — Plena Contábil",
   description: "Guia rápido do sistema, do cadastro ao encerramento do serviço.",
 };
+
+/**
+ * Renderiza por requisição, e isso NÃO é detalhe de performance.
+ *
+ * O guia pergunta ao ambiente se o disco aceita gravação para decidir o que
+ * promete. Prerenderizado, essa pergunta seria respondida na máquina de BUILD,
+ * onde o disco é gravável, e a página publicada nasceria afirmando "fica salvo
+ * de verdade" justamente onde nada fica salvo. Foi o que aconteceu na primeira
+ * tentativa: o build passou limpo e congelou a frase errada no HTML.
+ */
+export const dynamic = "force-dynamic";
 
 /**
  * Guia de uso, escrito para a contadora.
@@ -75,6 +87,13 @@ const N = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function Pagina() {
+  // O guia PRECISA falar do ambiente em que ele está sendo lido. Na versão
+  // publicada o disco é somente leitura, então cadastrar, completar cadastro e
+  // encerrar processo aparecem desativados: prometer que "fica salvo" ali seria
+  // ensinar a contadora a confiar num botão que a própria tela recusa, o mesmo
+  // erro que a checagem de dado inventado existe para evitar. Derivado do estado
+  // real, nunca escrito à mão, senão volta a mentir quando o ambiente mudar.
+  const somenteLeitura = carteiraSomenteLeitura();
   return (
     <main className="mx-auto min-h-dvh w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
       <Link
@@ -92,6 +111,18 @@ export default function Pagina() {
         Toque numa seção para abrir. O que ainda não existe está no fim, listado
         com todas as letras.
       </p>
+
+      {/* Vem ANTES do passo a passo, não depois: quem lê o guia de cima para
+          baixo tem que saber que os botões de gravar estão desativados antes de
+          tentar seguir os passos, não ao chegar no fim. */}
+      {somenteLeitura ? (
+        <p className="mt-4 rounded-lg border border-[var(--borda-suave)] bg-white/[0.03] p-3 text-sm text-texto-suave">
+          <N>Antes de começar:</N> este é o endereço de demonstração, e ele{" "}
+          <N>não grava nada</N>. Dá para abrir tudo, clicar em tudo e conferir
+          se a sua carteira está certa, mas os botões que salvam aparecem
+          desativados. Nada do que você digitar aqui vai ficar.
+        </p>
+      ) : null}
 
       <div className="mt-6 space-y-3">
         <Secao
@@ -300,10 +331,23 @@ export default function Pagina() {
             quebradas: cada uma explica o que vai ter ali e como resolver o
             assunto hoje.
           </p>
-          <p className="rounded-lg border border-[var(--borda-suave)] bg-white/[0.02] p-3 text-xs">
-            <N>Fica salvo de verdade:</N> cadastrar cliente, completar cadastro
-            e concluir processo. Esses três sobrevivem a fechar o navegador.
-          </p>
+          {somenteLeitura ? (
+            <p className="rounded-lg border border-[var(--borda-suave)] bg-white/[0.02] p-3 text-xs">
+              <N>Nesta versão publicada, nada que você digitar fica salvo.</N>{" "}
+              Cadastrar cliente, completar cadastro e encerrar processo aparecem
+              como <N>desativados</N>, e é de propósito: o endereço da
+              demonstração roda num servidor que não aceita gravação. Você pode
+              navegar por tudo à vontade, sem medo de estragar nada, mas para
+                registrar informação de verdade me avise, que eu subo a versão
+              que grava.
+            </p>
+          ) : (
+            <p className="rounded-lg border border-[var(--borda-suave)] bg-white/[0.02] p-3 text-xs">
+              <N>Fica salvo de verdade:</N> cadastrar cliente, completar
+              cadastro e concluir processo. Esses três sobrevivem a fechar o
+              navegador.
+            </p>
+          )}
         </Secao>
 
         <Secao titulo="Se algo parecer errado" resumo="É erro nosso, não seu">

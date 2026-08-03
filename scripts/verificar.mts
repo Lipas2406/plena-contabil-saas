@@ -1,4 +1,5 @@
 // Smoke test temporário. Roda a regra pura, sem LLM e sem chave de API.
+import { readFileSync } from "node:fs";
 import { consultarVencimentos } from "@/dominio/ia/ferramentas/consultar-vencimentos";
 import { classificarDocumento } from "@/dominio/ia/ferramentas/classificar-documento";
 import { listarObrigacoes } from "@/dominio/mocks/obrigacoes";
@@ -319,6 +320,30 @@ console.log(
   );
   console.log(
     `   processos na carteira: ${abertos.length}, todos em aberto na semente`,
+  );
+}
+
+// ── O guia não pode prometer gravação onde não há ────────────────────────────
+// Em 03/08/2026 o /ajuda publicado afirmava "fica salvo de verdade" sobre as
+// três funções que a versão hospedada RECUSA, porque o disco é somente leitura.
+// A tela não pega isso: o texto era fixo e o build passava limpo. Pior, a
+// primeira correção nasceu morta, porque a página era prerenderizada e a
+// pergunta sobre o disco era respondida na máquina de build, onde ele grava.
+{
+  const fonte = readFileSync("src/app/ajuda/page.tsx", "utf-8");
+  checar(
+    "guia pergunta ao ambiente se o disco grava",
+    fonte.includes("carteiraSomenteLeitura()"),
+  );
+  checar(
+    "guia renderiza por requisição, não no build",
+    /export const dynamic\s*=\s*"force-dynamic"/.test(fonte),
+  );
+  const promessa = fonte.indexOf("Fica salvo de verdade");
+  const condicional = fonte.indexOf("somenteLeitura ?");
+  checar(
+    "a promessa de gravação vive dentro do condicional",
+    promessa === -1 || (condicional !== -1 && condicional < promessa),
   );
 }
 
