@@ -15,6 +15,7 @@ import { Kanban } from "@/componentes/escritorio/kanban";
 import { LinhaDoTempo } from "@/componentes/escritorio/linha-do-tempo";
 import { ListaClientes } from "@/componentes/escritorio/lista-clientes";
 import { NovoCliente } from "@/componentes/escritorio/novo-cliente";
+import { carteiraSomenteLeitura } from "@/dominio/armazenamento-clientes";
 import { NumeroAnimado } from "@/componentes/escritorio/numero-animado";
 
 export const metadata = {
@@ -123,7 +124,7 @@ export default function PaginaEscritorio() {
             {criticos > 0 && (
               <Etiqueta tom="critico">{criticos} travado(s)</Etiqueta>
             )}
-            <NovoCliente />
+            <NovoCliente somenteLeitura={carteiraSomenteLeitura()} />
           </div>
         }
       >

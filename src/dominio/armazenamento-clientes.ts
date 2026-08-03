@@ -28,17 +28,66 @@ import type {
 
 const CAMINHO = path.join(process.cwd(), ".dados", "clientes.json");
 
-function lerOuSemear(): Cliente[] {
-  if (!fs.existsSync(CAMINHO)) {
+/**
+ * Onde este arquivo roda, dá para gravar?
+ *
+ * Em hospedagem serverless (Vercel e parecidos) o diretório da aplicação é
+ * SOMENTE LEITURA, e `/.dados/` está no `.gitignore`, então lá o arquivo não
+ * existe e não pode ser criado. Sem este teste, a primeira leitura derruba a
+ * aplicação inteira com `EROFS`, e não só o cadastro: painel, escritório e
+ * sessão passam por aqui.
+ *
+ * Testa gravando de verdade, uma vez por processo. Deduzir pela variável de
+ * ambiente (`process.env.VERCEL`) seria adivinhar o comportamento do
+ * provedor; tentar escrever responde a pergunta que realmente importa.
+ */
+let gravavelCache: boolean | null = null;
+
+function podeGravar(): boolean {
+  if (gravavelCache !== null) return gravavelCache;
+  try {
     fs.mkdirSync(path.dirname(CAMINHO), { recursive: true });
-    fs.writeFileSync(CAMINHO, JSON.stringify(SEED, null, 2), "utf-8");
-    return SEED;
+    fs.accessSync(path.dirname(CAMINHO), fs.constants.W_OK);
+    gravavelCache = true;
+  } catch {
+    gravavelCache = false;
   }
-  return JSON.parse(fs.readFileSync(CAMINHO, "utf-8")) as Cliente[];
+  return gravavelCache;
+}
+
+/**
+ * `true` quando a carteira não pode receber cadastro novo neste ambiente.
+ *
+ * A UI precisa saber para NÃO oferecer o botão de cadastrar: botão que aceita
+ * o clique e perde o dado é a affordance falsa que este projeto já removeu
+ * quatro vezes. Ver `conhecimento/wiki/affordance-falsa` no vault.
+ */
+export function carteiraSomenteLeitura(): boolean {
+  return !podeGravar();
+}
+
+function lerOuSemear(): Cliente[] {
+  if (fs.existsSync(CAMINHO)) {
+    return JSON.parse(fs.readFileSync(CAMINHO, "utf-8")) as Cliente[];
+  }
+  // Sem arquivo e sem permissão de escrita: a demonstração roda com a semente
+  // em memória. Perde cadastro novo, não perde a carteira.
+  if (!podeGravar()) return SEED;
+
+  fs.writeFileSync(CAMINHO, JSON.stringify(SEED, null, 2), "utf-8");
+  return SEED;
+}
+
+/** Erro de escrita bloqueada pelo ambiente, para a UI distinguir de erro de dado. */
+export class CarteiraSomenteLeituraError extends Error {
+  constructor() {
+    super("Esta demonstração está hospedada em ambiente somente leitura.");
+    this.name = "CarteiraSomenteLeituraError";
+  }
 }
 
 function gravar(lista: Cliente[]) {
-  fs.mkdirSync(path.dirname(CAMINHO), { recursive: true });
+  if (!podeGravar()) throw new CarteiraSomenteLeituraError();
   fs.writeFileSync(CAMINHO, JSON.stringify(lista, null, 2), "utf-8");
 }
 

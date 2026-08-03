@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { apenasDigitos } from "@/kernel/br";
 import {
   adicionarCliente,
+  CarteiraSomenteLeituraError,
   type NovoClienteEntrada,
 } from "@/dominio/armazenamento-clientes";
 
@@ -41,7 +42,21 @@ export async function criarCliente(
     }
   }
 
-  const cliente = adicionarCliente(dados);
+  let cliente;
+  try {
+    cliente = adicionarCliente(dados);
+  } catch (e) {
+    // A UI já esconde o botão quando a carteira é somente leitura. Este ramo
+    // cobre quem chegar pela Server Action direto, e o importante é não fingir
+    // que salvou: devolve o motivo, não um sucesso vazio.
+    if (e instanceof CarteiraSomenteLeituraError) {
+      return {
+        ok: false,
+        erro: "Esta demonstração está publicada em modo somente leitura, então o cadastro não é salvo. Rodando local, ele funciona.",
+      };
+    }
+    throw e;
+  }
 
   // As duas telas leem a mesma carteira: o painel do escritório mostra
   // todo mundo, o painel do cliente pode logar como o recém-criado no dia

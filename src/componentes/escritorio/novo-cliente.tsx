@@ -52,7 +52,13 @@ const FORM_VAZIO = {
  * A ação em si mora em `@/dominio/acoes/clientes`, este arquivo só coleta
  * o que a contadora digitou.
  */
-export function NovoCliente() {
+/**
+ * `somenteLeitura` chega do servidor porque só ele sabe se o disco aceita
+ * escrita. Na demonstração publicada não dá, e aí o certo é NÃO oferecer o
+ * botão: botão que aceita o clique e perde o dado é a affordance falsa que
+ * este painel já removeu quatro vezes.
+ */
+export function NovoCliente({ somenteLeitura = false }: { somenteLeitura?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO);
   const [erro, setErro] = useState<string | null>(null);
@@ -95,6 +101,15 @@ export function NovoCliente() {
       }
       fechar();
     });
+  }
+
+  if (somenteLeitura) {
+    return (
+      <p className="text-xs text-texto-suave">
+        Cadastro desativado nesta demonstração publicada. Rodando local, ele
+        salva de verdade.
+      </p>
+    );
   }
 
   return (
