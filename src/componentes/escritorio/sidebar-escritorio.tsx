@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   CalendarClock,
+  CircleQuestionMark,
   ExternalLink,
   FileStack,
   KanbanSquare,
@@ -110,7 +111,18 @@ export function SidebarEscritorio() {
         })}
       </nav>
 
-      <div className="border-t border-[var(--borda-suave)] p-3">
+      <div className="space-y-0.5 border-t border-[var(--borda-suave)] p-3">
+        {/* Mesma aba, ao contrário do "Ver como cliente": consultar o guia é
+            parte do trabalho, não troca de contexto, e no celular abrir aba
+            nova só atrapalha na hora de voltar. */}
+        <Link
+          href="/ajuda"
+          className="flex items-center gap-3 rounded-[var(--radius-card)] px-3 py-2.5 text-sm font-medium text-texto-suave transition-colors hover:bg-white/5 hover:text-texto"
+        >
+          <CircleQuestionMark className="size-[18px]" aria-hidden />
+          Como usar
+        </Link>
+
         {/* Nova aba de propósito: troca de contexto (contadora -> visão do
             cliente), não navegação dentro do próprio trabalho. Assim ela não
             perde a rolagem nem o filtro que tinha aberto aqui. */}
