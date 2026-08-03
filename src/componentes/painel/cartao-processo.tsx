@@ -56,6 +56,14 @@ export function CartaoProcesso({ processo }: { processo: Processo }) {
   ).length;
   const travado = processo.etapas.some((e) => e.status === "bloqueada");
 
+  // Etapa "não iniciada" é o padrão e não afirma nada. As outras afirmam que
+  // um trabalho andou, e enquanto a contadora não confirmar o ponto real isso
+  // é estimativa. Um aviso por cartão, não por etapa: marcar as 17 deixaria a
+  // lista ilegível e diria a mesma coisa 17 vezes.
+  const andamentoPorConfirmar = processo.etapas.some(
+    (e) => e.status !== "nao-iniciada" && !e.statusConfirmado,
+  );
+
   return (
     <Cartao className="h-full" semInclinacao>
       <div className="p-5">
@@ -132,6 +140,12 @@ export function CartaoProcesso({ processo }: { processo: Processo }) {
             );
           })}
         </ol>
+
+        {andamentoPorConfirmar && (
+          <p className="mt-3 border-t border-[var(--borda-suave)] pt-3 text-xs text-texto-suave">
+            Andamento a confirmar com a Plena.
+          </p>
+        )}
       </div>
     </Cartao>
   );

@@ -92,7 +92,9 @@ export function adicionarCliente(entrada: NovoClienteEntrada): Cliente {
 
   const cliente: Cliente = {
     id: proximoId(lista),
-    razaoSocial: entrada.razaoSocial?.trim() || nome,
+    // Sem razão social o campo fica nulo, e não copia o nome fantasia: copiar
+    // faria o cadastro parecer completo e sumiria da lista de lacunas.
+    razaoSocial: entrada.razaoSocial?.trim() || null,
     nomeFantasia: nome,
     tipoPessoa: entrada.tipoPessoa,
     cnpj: entrada.cnpj ? apenasDigitos(entrada.cnpj) : null,
@@ -105,7 +107,7 @@ export function adicionarCliente(entrada: NovoClienteEntrada): Cliente {
     status: "pendente",
     atendimentos: [],
     servicos: [],
-    responsavel: entrada.responsavel?.trim() || nome,
+    responsavel: entrada.responsavel?.trim() || null,
     email: entrada.email?.trim() || null,
     telefone: entrada.telefone ? apenasDigitos(entrada.telefone) : null,
     // Data real do cadastro, não suposição: é hoje que ele entrou no sistema.

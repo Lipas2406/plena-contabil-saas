@@ -175,7 +175,7 @@ function DetalheCliente({
             {c.nomeFantasia}
           </h2>
           <p className="mt-1 text-xs text-texto-suave">
-            {c.razaoSocial !== c.nomeFantasia && c.razaoSocial !== "Não informado"
+            {c.razaoSocial && c.razaoSocial !== c.nomeFantasia
               ? c.razaoSocial
               : c.cnpj
                 ? formatarCNPJ(c.cnpj)

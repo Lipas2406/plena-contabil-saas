@@ -31,7 +31,7 @@ export default function LayoutPainel({
       {/* A margem compensa a sidebar fixa, que sai do fluxo do documento. */}
       <div className="lg:ml-64">
         <Topbar
-          nomeUsuario={cliente.responsavel}
+          nomeUsuario={cliente.responsavel ?? cliente.nomeFantasia}
           empresa={cliente.nomeFantasia}
           avisos={avisos}
         />

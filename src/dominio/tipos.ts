@@ -77,7 +77,13 @@ export type StatusCliente = "ativo" | "pendente" | "inativo";
  */
 export interface Cliente {
   id: string;
-  razaoSocial: string;
+  /**
+   * `null` quando a contadora não informou, ou quando a empresa ainda está em
+   * abertura e a razão social não existe. Não usar texto sentinela tipo
+   * "Não informado": isso guarda uma mentira no dado, some da lista de lacunas
+   * e obriga a tela a comparar string mágica pra esconder.
+   */
+  razaoSocial: string | null;
   nomeFantasia: string;
   tipoPessoa: TipoPessoa;
   /** Somente dígitos. Formatar na apresentação, nunca no dado. */
@@ -94,7 +100,12 @@ export interface Cliente {
   atendimentos: TipoAtendimento[];
   /** Catálogo comercial, para cruzar com a landing page. */
   servicos: ServicoPlena[];
-  responsavel: string;
+  /**
+   * Quem a contadora fala no dia a dia. `null` quando ela não informou.
+   * A tela cai para o nome do cliente, e o dado NÃO copia o nome: copiar
+   * esconderia a lacuna.
+   */
+  responsavel: string | null;
   email: string | null;
   /** Somente dígitos, com DDD. */
   telefone: string | null;
@@ -114,6 +125,19 @@ export interface EtapaProcesso {
   status: StatusEtapa;
   /** Por que está bloqueada, ou o que falta. Aparece na tela como está aqui. */
   observacao?: string;
+  /**
+   * `true` só quando a contadora confirmou o ponto real do processo.
+   *
+   * Ela informou o ESCOPO do trabalho, não onde cada frente parou, então todo
+   * status semeado é estimativa. Ausente ou `false` significa não confirmado, e
+   * a tela avisa isso: chute sem aviso vira dado inventado, que é o que
+   * `demo-nao-inventa-dado` proíbe.
+   *
+   * Não vale marcar como confirmado para calar o aviso. O aviso some sozinho
+   * quando o dado real entrar, e `scripts/verificar.mts` garante que nenhuma
+   * etapa nasça confirmada no seed.
+   */
+  statusConfirmado?: boolean;
 }
 
 /**

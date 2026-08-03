@@ -65,14 +65,14 @@ export const CLIENTES: Cliente[] = [
     status: "pendente",
     atendimentos: ["abertura"],
     servicos: ["abertura-de-empresa"],
-    responsavel: "Não informado",
+    responsavel: null,
     email: null,
     telefone: null,
     clienteDesde: null,
   },
   {
     id: "cli-003",
-    razaoSocial: "Não informado",
+    razaoSocial: null,
     nomeFantasia: "Edilaine (Psicóloga)",
     tipoPessoa: "PJ",
     cnpj: null,
@@ -91,7 +91,7 @@ export const CLIENTES: Cliente[] = [
   },
   {
     id: "cli-004",
-    razaoSocial: "Não informado",
+    razaoSocial: null,
     nomeFantasia: "Davison (empresa)",
     tipoPessoa: "PJ",
     cnpj: null,
@@ -110,7 +110,7 @@ export const CLIENTES: Cliente[] = [
   },
   {
     id: "cli-005",
-    razaoSocial: "Não informado",
+    razaoSocial: null,
     nomeFantasia: "Dr. Paulino (empresa)",
     tipoPessoa: "PJ",
     cnpj: null,
@@ -153,6 +153,8 @@ export const CLIENTES: Cliente[] = [
 /** Cadastro incompleto: o que trava emitir guia ou declarar. */
 export function cadastroIncompleto(cliente: Cliente) {
   const faltando: string[] = [];
+  if (cliente.tipoPessoa === "PJ" && !cliente.razaoSocial)
+    faltando.push("razão social");
   if (cliente.tipoPessoa === "PJ" && !cliente.cnpj) faltando.push("CNPJ");
   if (cliente.tipoPessoa === "PF" && !cliente.cpf) faltando.push("CPF");
   if (!cliente.atividade) faltando.push("atividade");

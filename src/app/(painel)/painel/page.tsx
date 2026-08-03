@@ -58,7 +58,7 @@ export default function PaginaDashboard() {
     <div className="mx-auto max-w-7xl space-y-8">
       <header>
         <h1 className="font-display text-3xl leading-tight font-semibold text-texto sm:text-4xl">
-          Olá, {primeiroNome(cliente.responsavel)}.
+          Olá, {primeiroNome(cliente.responsavel ?? cliente.nomeFantasia)}.
         </h1>
         <p className="mt-2 text-sm text-texto-suave">
           {cliente.nomeFantasia}

@@ -3,7 +3,7 @@ import { consultarVencimentos } from "@/dominio/ia/ferramentas/consultar-vencime
 import { classificarDocumento } from "@/dominio/ia/ferramentas/classificar-documento";
 import { listarObrigacoes } from "@/dominio/mocks/obrigacoes";
 import { listarProcessosDoCliente } from "@/dominio/mocks/processos";
-import { CLIENTES } from "@/dominio/mocks/clientes";
+import { CLIENTES, cadastroIncompleto } from "@/dominio/mocks/clientes";
 import { avisosDoCliente } from "@/dominio/avisos";
 import { hojeISO } from "@/kernel/datas";
 import { formatarTelefone, formatarCNPJ, formatarBRL, mesmoTextoBR } from "@/kernel/br";
@@ -135,6 +135,100 @@ checar(
   }),
 );
 console.log(`   avisos derivados na carteira inteira: ${todosOsAvisos.length}`);
+
+// ---------------------------------------------------------------------------
+// Honestidade da demonstração (item 0.5 do Cenário 0, 02/08/2026).
+//
+// A carteira veio da contadora com quase tudo em branco. Estas checagens
+// existem para que o sistema NUNCA preencha lacuna por conta própria: o risco
+// não é a tela ficar pobre, é ela afirmar algo errado sobre cliente real e
+// derrubar a confiança na demonstração inteira.
+// ---------------------------------------------------------------------------
+
+// Ela não informou contato de ninguém. Se aparecer e-mail ou telefone aqui,
+// alguém inventou ou vazou dado real, e os dois são problema.
+checar(
+  "nenhum cliente da carteira tem e-mail ou telefone preenchido",
+  CLIENTES.every((c) => c.email === null && c.telefone === null),
+);
+
+// Nenhum valor em dinheiro foi informado. Dinheiro é o campo que o cliente
+// confere em dois segundos, e errar ali contamina o resto da tela.
+checar(
+  "nenhum cliente tem data de início inventada",
+  CLIENTES.every((c) => c.clienteDesde === null),
+);
+
+// Só um dos seis tinha CNPJ. Os outros estão em abertura ou não informaram.
+const comCNPJ = CLIENTES.filter((c) => c.cnpj !== null);
+checar("exatamente 1 cliente tem CNPJ, como na carteira real", comCNPJ.length === 1);
+
+// O CNPJ da demo tem dígito verificador quebrado de propósito: assim ele não
+// existe e não colide com empresa nenhuma. Conferido por cálculo, não por fé.
+const dvCNPJ = (base: string) => {
+  const soma = [...base]
+    .reverse()
+    .reduce((s, d, i) => s + Number(d) * ((i % 8) + 2), 0);
+  const r = soma % 11;
+  return r < 2 ? "0" : String(11 - r);
+};
+checar(
+  "o CNPJ da demo é inválido de propósito (não é de ninguém)",
+  comCNPJ.every((c) => {
+    const n = c.cnpj!.replace(/\D/g, "");
+    const d1 = dvCNPJ(n.slice(0, 12));
+    return n.slice(12) !== d1 + dvCNPJ(n.slice(0, 12) + d1);
+  }),
+);
+
+// Lacuna se guarda como `null`, nunca como texto sentinela. "Não informado"
+// gravado no campo vira mentira no dado: some da lista de lacunas, obriga a
+// tela a comparar string mágica e some do aviso de cadastro incompleto.
+const SENTINELAS = ["não informado", "nao informado", "n/a", "-", "--", "a informar"];
+checar(
+  "nenhum campo de texto guarda sentinela no lugar de null",
+  CLIENTES.every((c) =>
+    [c.razaoSocial, c.nomeFantasia, c.atividade, c.responsavel].every(
+      (v) => v === null || !SENTINELAS.includes(v.trim().toLowerCase()),
+    ),
+  ),
+);
+
+// A razão social que falta tem que aparecer como lacuna, senão a tela deixa de
+// ser formulário de coleta justamente onde a carteira mandou puxar dado.
+const semRazaoSocial = CLIENTES.filter(
+  (c) => c.tipoPessoa === "PJ" && !c.razaoSocial,
+);
+checar(
+  "razão social ausente entra no cadastro incompleto",
+  semRazaoSocial.every((c) => cadastroIncompleto(c).includes("razão social")),
+);
+console.log(`   clientes PJ sem razão social: ${semRazaoSocial.length}`);
+
+// Pessoa física não tem regime tributário. `null` é o único valor honesto.
+checar(
+  "cliente PF não tem regime tributário",
+  CLIENTES.filter((c) => c.tipoPessoa === "PF").every((c) => c.regime === null),
+);
+
+// O status das etapas é estimativa: ela passou o escopo, não o ponto de parada.
+// Nenhuma pode nascer confirmada, senão o aviso "a confirmar" some da tela e o
+// chute passa a se apresentar como fato.
+const todasAsEtapas = CLIENTES.flatMap((c) =>
+  listarProcessosDoCliente(c.id).flatMap((p) => p.etapas),
+);
+checar(
+  "nenhuma etapa do seed nasce com status confirmado",
+  todasAsEtapas.every((e) => e.statusConfirmado !== true),
+);
+const afirmamAndamento = todasAsEtapas.filter((e) => e.status !== "nao-iniciada");
+checar(
+  "toda etapa que afirma andamento está marcada como a confirmar",
+  afirmamAndamento.every((e) => !e.statusConfirmado),
+);
+console.log(
+  `   etapas: ${todasAsEtapas.length} no total, ${afirmamAndamento.length} afirmam andamento e pedem confirmação`,
+);
 
 console.log(falhas === 0 ? "\n== TUDO PASSOU ==" : `\n== ${falhas} FALHA(S) ==`);
 process.exit(falhas === 0 ? 0 : 1);
