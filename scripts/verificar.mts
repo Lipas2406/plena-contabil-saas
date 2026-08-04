@@ -347,5 +347,44 @@ console.log(
   );
 }
 
+// Kanban e fila de documentos guardam estado só em memória e perdem tudo ao
+// recarregar, em QUALQUER ambiente (não é o caso do disco somente leitura da
+// hospedagem). A tela, porém, convida a agir: a seção Tarefas diz "Arraste, ou
+// use as setas do cartão", e o documento SAI da fila quando decidido, que é a
+// cara de uma confirmação. Sem ressalva, a pessoa só descobre ao recarregar, e
+// conclui que o sistema perdeu o trabalho dela. Achado em 03/08/2026, quando a
+// Marta ia testar pelo celular.
+//
+// A checagem exige a ressalva ANTES da área interativa: ressalva embaixo do que
+// ela já clicou não serve, mesma regra do aviso no topo do guia.
+{
+  const casos = [
+    {
+      arquivo: "src/componentes/escritorio/kanban.tsx",
+      rotulo: "Kanban",
+      interativo: "grid gap-4 md:grid-cols-3",
+    },
+    {
+      arquivo: "src/componentes/escritorio/fila-documentos.tsx",
+      rotulo: "fila de documentos",
+      interativo: '<ul className="space-y-2.5">',
+    },
+  ];
+
+  for (const caso of casos) {
+    const fonte = readFileSync(caso.arquivo, "utf-8");
+    const ressalva = fonte.indexOf("aqui é demonstração");
+    const area = fonte.indexOf(caso.interativo);
+    checar(
+      `${caso.rotulo} avisa que não guarda o que a pessoa fizer`,
+      ressalva !== -1,
+    );
+    checar(
+      `${caso.rotulo}: a ressalva vem antes da área que convida a agir`,
+      ressalva !== -1 && area !== -1 && ressalva < area,
+    );
+  }
+}
+
 console.log(falhas === 0 ? "\n== TUDO PASSOU ==" : `\n== ${falhas} FALHA(S) ==`);
 process.exit(falhas === 0 ? 0 : 1);

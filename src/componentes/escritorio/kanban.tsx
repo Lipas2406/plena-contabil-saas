@@ -63,7 +63,21 @@ export function Kanban({ tarefas }: { tarefas: TarefaEscritorio[] }) {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <>
+      {/* O aviso vem ANTES do quadro, e não depende de `carteiraSomenteLeitura`:
+          o estado aqui é local e some ao recarregar em qualquer ambiente, não só
+          na demonstração publicada. Sem isto a descrição da seção convida a
+          arrastar ("Arraste, ou use as setas do cartão"), o cartão se move de
+          verdade na tela, e a pessoa só descobre que nada ficou ao recarregar —
+          que é quando ela conclui que o sistema perdeu o trabalho dela, não que
+          isto é demonstração. Mesmo princípio do guia: se a ressalva não está
+          onde a pessoa olha, ela não existe. */}
+      <p className="mb-3 text-xs text-texto-suave">
+        Pode mover à vontade: aqui é demonstração. Ao recarregar a página, os
+        cartões voltam para onde estão agora.
+      </p>
+
+      <div className="grid gap-4 md:grid-cols-3">
       {COLUNAS.map((coluna) => {
         const daColuna = itens.filter((t) => t.coluna === coluna.id);
         const realcar = alvo === coluna.id && arrastando !== null;
@@ -179,7 +193,8 @@ export function Kanban({ tarefas }: { tarefas: TarefaEscritorio[] }) {
           </div>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }
 

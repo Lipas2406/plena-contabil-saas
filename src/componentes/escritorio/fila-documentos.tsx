@@ -43,6 +43,15 @@ export function FilaDocumentos({
 
   return (
     <div>
+      {/* Mesmo motivo do aviso no Kanban: aprovar e recusar são locais e somem
+          ao recarregar em qualquer ambiente. Aqui o risco é maior, porque o
+          cartão SAI da fila ao decidir, o que parece confirmação de que a
+          decisão foi gravada. */}
+      <p className="mb-3 text-xs text-texto-suave">
+        Pode aprovar ou recusar à vontade: aqui é demonstração. Ao recarregar a
+        página, a fila volta a como está agora.
+      </p>
+
       <ul className="space-y-2.5">
         <AnimatePresence initial={false} mode="popLayout">
           {fila.map((doc) => {
