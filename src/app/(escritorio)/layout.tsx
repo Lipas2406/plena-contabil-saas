@@ -19,7 +19,10 @@ export default function LayoutEscritorio({
     <div className="min-h-dvh">
       <SidebarEscritorio />
       <div className="lg:ml-60">
-        <main className="p-4 lg:p-8">
+        {/* `pt-20` no mobile abre espaço para o botão de menu, que é fixed e
+            cairia em cima do título. O painel do cliente resolve o mesmo
+            problema com um vão dentro da Topbar; aqui não há Topbar. */}
+        <main className="p-4 pt-20 lg:p-8">
           <TransicaoPagina>{children}</TransicaoPagina>
         </main>
       </div>

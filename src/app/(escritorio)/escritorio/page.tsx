@@ -55,7 +55,7 @@ export default function PaginaEscritorio() {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-12">
-      <header id="visao-geral" className="scroll-mt-8">
+      <header id="visao-geral" className="scroll-mt-20 lg:scroll-mt-8">
         <h1 className="font-display text-3xl leading-tight font-semibold text-texto sm:text-4xl">
           Escritório
         </h1>
@@ -180,8 +180,10 @@ function Secao({
   acao?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  // `scroll-mt-20` no mobile: o botão de menu é fixed e a âncora, sem margem,
+  // encostaria o título embaixo dele. No desktop o botão não existe, volta a 8.
   return (
-    <section id={id} className="scroll-mt-8">
+    <section id={id} className="scroll-mt-20 lg:scroll-mt-8">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-xl font-medium text-texto">
