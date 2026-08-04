@@ -49,7 +49,10 @@ export type TipoAtendimento =
   | "abertura"
   | "regularizacao"
   | "irpf"
-  | "suporte";
+  | "suporte"
+  // Ver a nota em `ServicoPlena`: o arquivo real tem trabalho de folha rodando
+  // mês a mês, com demonstrativo, relatório consolidado e guia por competência.
+  | "folha-de-pagamento";
 
 /** Serviços vendidos pela Plena, espelhando a landing page aprovada. */
 export type ServicoPlena =
@@ -58,7 +61,13 @@ export type ServicoPlena =
   | "regularizacao-cnpj"
   | "mei"
   | "contabilidade-mensal"
-  | "planejamento-tributario";
+  | "planejamento-tributario"
+  // Acrescentados em 04/08/2026 a partir do arquivo real da contadora: existem
+  // pastas dedicadas a folha/eSocial e a escritório virtual, com trabalho
+  // recorrente. O catálogo da landing page não os previa, e por isso a carteira
+  // não conseguia representar clientes que só têm esses dois.
+  | "folha-de-pagamento"
+  | "escritorio-virtual";
 
 export type StatusObrigacao = "pago" | "a-vencer" | "vence-hoje" | "atrasado";
 
@@ -203,16 +212,116 @@ export type CategoriaDocumento =
   | "Receita de venda"
   | "Não identificado";
 
+/**
+ * O que o documento É, independente de para que ele serve contabilmente.
+ *
+ * Eixo diferente de `CategoriaDocumento`, e os dois convivem: um informe de
+ * rendimentos É um informe (tipo) e SERVE como comprovante de receita
+ * (categoria). Classificar só por categoria perde a informação de que aquele
+ * papel específico é o que a Receita exige na entrega.
+ *
+ * Levantado em 04/08/2026 a partir dos nomes de arquivo do arquivo real da
+ * contadora, por frequência: recibo (39), declaração (36), DARF (28), DAS (20),
+ * informe (16), boleto (11), comprovante (9), guia (8), extrato (8), certidão
+ * (7), contrato (6), DCTF (3), procuração (2), holerite (1).
+ */
+export type TipoDocumento =
+  | "declaracao"
+  | "recibo-de-entrega"
+  | "guia-de-pagamento"
+  | "comprovante-de-pagamento"
+  | "informe-de-rendimentos"
+  | "extrato"
+  | "certidao"
+  | "contrato"
+  | "procuracao"
+  | "holerite"
+  | "outro";
+
+/**
+ * De onde o papel veio. Decide de quem é a responsabilidade quando ele falta.
+ *
+ * A distinção não é burocrática: se o documento é `recebido-do-cliente` e não
+ * chegou, quem cobra é a contadora; se é `gerado-pela-plena`, quem deve é ela
+ * mesma. Hoje a tela não sabe diferenciar e trata toda falta igual.
+ */
+export type OrigemDocumento =
+  | "gerado-pela-plena"
+  | "recebido-do-cliente"
+  | "emitido-pelo-orgao";
+
+/**
+ * Assinatura como estado, não como pasta.
+ *
+ * No arquivo real existem pastas chamadas `Assinados`, com 5 e 16 arquivos.
+ * Mover arquivo de pasta É o controle de assinatura hoje — o que significa que
+ * o estado existe, é rastreado à mão, e some quando alguém esquece de mover.
+ */
+export type EstadoAssinatura =
+  | "nao-requer"
+  | "aguardando-assinatura"
+  | "assinado";
+
+/**
+ * Período a que o documento se refere. NÃO é a data em que ele foi emitido.
+ *
+ * A declaração de IRPF entregue em 2026 refere-se ao ano-calendário 2025, e é
+ * assim que ela nomeia os arquivos e organiza as pastas. Guardar só
+ * `emitidoEm` torna impossível responder "o que falta do imposto de renda
+ * deste ano", que é a pergunta que ela faz.
+ *
+ * - `exercicio`: ano da entrega/apuração (o "IR 2026").
+ * - `anoCalendario`: ano dos fatos declarados. Ausente quando não se aplica.
+ * - `competencia`: mês de apuração (YYYY-MM), para o que é mensal, como folha.
+ */
+export interface PeriodoReferencia {
+  exercicio: number;
+  anoCalendario?: number;
+  competencia?: string;
+}
+
 export interface Documento {
   id: string;
   clienteId: string;
   nomeArquivo: string;
   categoria: CategoriaDocumento;
   valorCentavos: number | null;
-  /** ISO 8601 (YYYY-MM-DD). */
+  /** ISO 8601 (YYYY-MM-DD). Quando o papel foi emitido, não a que ele se refere. */
   emitidoEm: string;
   /** 0 a 1. Abaixo de 0.6 a UI exige confirmação humana. */
   confianca: number;
+
+  // ── Acrescentado em 04/08/2026, a partir do arquivo real ──────────────
+  // Todos opcionais de propósito: o acervo existente não tem essa informação,
+  // e exigir agora transformaria cada documento já cadastrado numa lacuna
+  // falsa. Ausente significa "ainda não classificado", não "não se aplica" —
+  // mesma regra de nulo do resto do arquivo.
+
+  /** O que o papel é. Ver `TipoDocumento`. */
+  tipo?: TipoDocumento;
+  /** De quem é a responsabilidade quando falta. Ver `OrigemDocumento`. */
+  origem?: OrigemDocumento;
+  /** Ver `EstadoAssinatura`. Ausente equivale a `nao-requer`. */
+  assinatura?: EstadoAssinatura;
+  /** A que período o documento se refere. Ver `PeriodoReferencia`. */
+  referencia?: PeriodoReferencia;
+  /**
+   * Processo ao qual este documento pertence, quando houver.
+   *
+   * No arquivo real os documentos vivem agrupados pelo trabalho que os gerou
+   * (uma pasta por pessoa dentro de `IR 2026`), não soltos por cliente. Sem
+   * este vínculo, "o que falta para fechar o IRPF do fulano" não é
+   * respondível: o sistema só sabe listar tudo o que aquele cliente já mandou.
+   */
+  processoId?: string;
+  /**
+   * Caminho de onde o arquivo veio, quando importado do computador dela.
+   *
+   * **O arquivo em si não sobe.** Decisão de 04/08/2026: o sistema guarda a
+   * ficha do documento, e o arquivo continua onde está. Isto é a trilha de
+   * volta, para ela achar o original sem depender da memória.
+   */
+  caminhoOrigem?: string;
 }
 
 /** Limite abaixo do qual classificação automática não pode ser aceita sozinha. */

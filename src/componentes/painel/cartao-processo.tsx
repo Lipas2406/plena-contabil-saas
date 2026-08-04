@@ -15,6 +15,7 @@ const ROTULO_TIPO: Record<TipoAtendimento, string> = {
   regularizacao: "Regularização fiscal",
   irpf: "Imposto de renda",
   suporte: "Suporte",
+  "folha-de-pagamento": "Folha de pagamento",
 };
 
 const TOM_TIPO: Record<
@@ -26,6 +27,7 @@ const TOM_TIPO: Record<
   regularizacao: "alerta",
   irpf: "info",
   suporte: "neutro",
+  "folha-de-pagamento": "ok",
 };
 
 const ETAPA = {

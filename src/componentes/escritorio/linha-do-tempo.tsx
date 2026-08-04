@@ -16,6 +16,7 @@ const ROTULO_TIPO: Record<TipoAtendimento, string> = {
   regularizacao: "Regularização",
   irpf: "IRPF",
   suporte: "Suporte",
+  "folha-de-pagamento": "Folha",
 };
 
 /**
