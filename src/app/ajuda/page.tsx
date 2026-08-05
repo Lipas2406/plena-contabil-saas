@@ -86,14 +86,14 @@ const N = ({ children }: { children: React.ReactNode }) => (
   <strong className="font-medium text-texto">{children}</strong>
 );
 
-export default function Pagina() {
+export default async function Pagina() {
   // O guia PRECISA falar do ambiente em que ele está sendo lido. Na versão
   // publicada o disco é somente leitura, então cadastrar, completar cadastro e
   // encerrar processo aparecem desativados: prometer que "fica salvo" ali seria
   // ensinar a contadora a confiar num botão que a própria tela recusa, o mesmo
   // erro que a checagem de dado inventado existe para evitar. Derivado do estado
   // real, nunca escrito à mão, senão volta a mentir quando o ambiente mudar.
-  const somenteLeitura = carteiraSomenteLeitura();
+  const somenteLeitura = await carteiraSomenteLeitura();
   return (
     <main className="mx-auto min-h-dvh w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
       <Link

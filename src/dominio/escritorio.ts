@@ -43,11 +43,13 @@ export interface ClienteNaCarteira {
   diasSemFechar: number | null;
 }
 
-export function montarCarteira(hoje = new Date()): ClienteNaCarteira[] {
-  const processos = listarProcessos(hoje);
+export async function montarCarteira(
+  hoje = new Date(),
+): Promise<ClienteNaCarteira[]> {
+  const processos = await listarProcessos(hoje);
   const obrigacoes = listarObrigacoes(hoje);
 
-  return listarClientes().map((cliente) => {
+  return (await listarClientes()).map((cliente) => {
     const meus = processos.filter((p) => p.clienteId === cliente.id);
     const etapas = meus.flatMap((p) => p.etapas);
     const travadas = etapas.filter((e) => e.status === "bloqueada");
@@ -100,8 +102,8 @@ export function montarCarteira(hoje = new Date()): ClienteNaCarteira[] {
 }
 
 /** Os 4 números do topo. Todos derivados, nenhum digitado. */
-export function resumoDoEscritorio(hoje = new Date()) {
-  const carteira = montarCarteira(hoje);
+export async function resumoDoEscritorio(hoje = new Date()) {
+  const carteira = await montarCarteira(hoje);
   return {
     clientes: carteira.length,
     tarefasAbertas: carteira.reduce((s, c) => s + c.etapasAbertas, 0),
@@ -136,14 +138,16 @@ export interface TarefaEscritorio {
  * semana. Aqui mover o cartão é mover a etapa, e o painel do cliente reflete
  * na hora, porque é o mesmo dado.
  */
-export function tarefasDoEscritorio(hoje = new Date()): TarefaEscritorio[] {
-  const porId = new Map(listarClientes().map((c) => [c.id, c]));
+export async function tarefasDoEscritorio(
+  hoje = new Date(),
+): Promise<TarefaEscritorio[]> {
+  const porId = new Map((await listarClientes()).map((c) => [c.id, c]));
 
   // Processo encerrado sai do quadro. O quadro é mesa de trabalho, não
   // arquivo: se ficasse, a coluna "concluído" cresceria para sempre e a tela
   // deixaria de responder "o que está na minha mão hoje". O trabalho concluído
   // continua visível no detalhe do cliente, com a data.
-  return listarProcessos(hoje)
+  return (await listarProcessos(hoje))
     .filter((p) => p.encerradoEm === null)
     .flatMap((processo) =>
       processo.etapas.map((etapa): TarefaEscritorio => ({
@@ -197,10 +201,12 @@ export interface ItemLinhaDoTempo {
  * Quando a primeira guia mensal entrar em `mocks/obrigacoes.ts`, ela cai aqui
  * pelo mesmo caminho, com data de vencimento no lugar de idade.
  */
-export function linhaDoTempo(hoje = new Date()): ItemLinhaDoTempo[] {
-  const porId = new Map(listarClientes().map((c) => [c.id, c]));
+export async function linhaDoTempo(
+  hoje = new Date(),
+): Promise<ItemLinhaDoTempo[]> {
+  const porId = new Map((await listarClientes()).map((c) => [c.id, c]));
 
-  return listarProcessos(hoje)
+  return (await listarProcessos(hoje))
     .map((processo): ItemLinhaDoTempo => {
       const abertas = processo.etapas.filter((e) => e.status !== "concluida");
       return {

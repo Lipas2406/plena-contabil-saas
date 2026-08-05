@@ -27,7 +27,7 @@ const checar = (nome: string, ok: boolean) => {
 };
 
 // A graça do padrão: chamo `.puro` direto, sem tocar no framework.
-const r = consultarVencimentos.puro({ cnpj: "31.845.220/0001-88" });
+const r = await consultarVencimentos.puro({ cnpj: "31.845.220/0001-88" });
 checar("acha cliente por CNPJ com máscara", r.encontrado === true);
 if (r.encontrado) {
   // Cliente sem NENHUMA obrigação cadastrada é o caso normal desta carteira,
@@ -44,7 +44,7 @@ if (r.encontrado) {
   console.log("   resumo:", r.resumo);
 }
 
-const inexistente = consultarVencimentos.puro({ cnpj: "00000000000000" });
+const inexistente = await consultarVencimentos.puro({ cnpj: "00000000000000" });
 checar("CNPJ inexistente devolve objeto, não exceção", inexistente.encontrado === false);
 
 const casos: [string, string, boolean][] = [
@@ -98,11 +98,11 @@ const porId = (id: string) => {
   if (!c) throw new Error(`cliente ${id} sumiu do mock`);
   return c;
 };
-const avisosDe = (id: string) =>
-  avisosDoCliente(porId(id), listarProcessosDoCliente(id));
+const avisosDe = async (id: string) =>
+  avisosDoCliente(porId(id), await listarProcessosDoCliente(id));
 
 // cli-001 tem etapa bloqueada (PGFN esperando as declarações em atraso).
-const avisosMarcio = avisosDe("cli-001");
+const avisosMarcio = await avisosDe("cli-001");
 const travada = avisosMarcio.find((a) => a.id.startsWith("travada-"));
 checar("etapa bloqueada vira aviso crítico", travada?.tom === "critico");
 checar(
@@ -112,7 +112,7 @@ checar(
 checar("aviso de etapa travada aponta para #processos", travada?.href === "#processos");
 
 // cli-003 tem cadastro incompleto e nenhuma etapa bloqueada.
-const avisosEdilaine = avisosDe("cli-003");
+const avisosEdilaine = await avisosDe("cli-003");
 const cadastro = avisosEdilaine.find((a) => a.id === "cadastro");
 checar("cadastro incompleto vira aviso", cadastro !== undefined);
 checar("aviso de cadastro aponta para #cadastro", cadastro?.href === "#cadastro");
@@ -129,7 +129,7 @@ checar(
 );
 
 // Nenhum aviso pode nascer sem destino: o painel usa href para navegar.
-const todosOsAvisos = CLIENTES.flatMap((c) => avisosDe(c.id));
+const todosOsAvisos = (await Promise.all(CLIENTES.map((c) => avisosDe(c.id)))).flat();
 checar(
   "todo aviso tem href de âncora",
   todosOsAvisos.every((a) => a.href.startsWith("#")),
@@ -139,12 +139,14 @@ checar(
   todosOsAvisos.every((a) => a.titulo.length > 0 && a.descricao.length > 0),
 );
 // Id repetido quebraria a key do React e sumiria com aviso na tela.
+// `.every` com callback async devolveria Promise (sempre truthy) e o teste
+// passaria sem testar. Resolve tudo antes e verifica em cima do resultado.
+const idsPorCliente = await Promise.all(
+  CLIENTES.map(async (c) => (await avisosDe(c.id)).map((a) => a.id)),
+);
 checar(
   "ids de aviso são únicos por cliente",
-  CLIENTES.every((c) => {
-    const ids = avisosDe(c.id).map((a) => a.id);
-    return new Set(ids).size === ids.length;
-  }),
+  idsPorCliente.every((ids) => new Set(ids).size === ids.length),
 );
 console.log(`   avisos derivados na carteira inteira: ${todosOsAvisos.length}`);
 
@@ -226,9 +228,13 @@ checar(
 // O status das etapas é estimativa: ela passou o escopo, não o ponto de parada.
 // Nenhuma pode nascer confirmada, senão o aviso "a confirmar" some da tela e o
 // chute passa a se apresentar como fato.
-const todasAsEtapas = CLIENTES.flatMap((c) =>
-  listarProcessosDoCliente(c.id).flatMap((p) => p.etapas),
-);
+const todasAsEtapas = (
+  await Promise.all(
+    CLIENTES.map(async (c) =>
+      (await listarProcessosDoCliente(c.id)).flatMap((p) => p.etapas),
+    ),
+  )
+).flat();
 checar(
   "nenhuma etapa do seed nasce com status confirmado",
   todasAsEtapas.every((e) => e.statusConfirmado !== true),

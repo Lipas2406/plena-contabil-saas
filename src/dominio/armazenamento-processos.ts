@@ -28,8 +28,8 @@ interface AlteracaoProcesso {
 
 type Alteracoes = Record<string, AlteracaoProcesso>;
 
-function lerAlteracoes(): Alteracoes {
-  return lerJSON<Alteracoes>(ARQUIVO) ?? {};
+async function lerAlteracoes(): Promise<Alteracoes> {
+  return (await lerJSON<Alteracoes>(ARQUIVO)) ?? {};
 }
 
 /**
@@ -62,27 +62,35 @@ export function aplicarEncerramento(
  * o trabalho acabou, o andamento deixou de ser estimativa. É o mesmo
  * `statusConfirmado` que faz o aviso "Andamento a confirmar" sumir sozinho.
  */
-export function listarProcessos(hoje = new Date()): Processo[] {
-  const alteracoes = lerAlteracoes();
+export async function listarProcessos(hoje = new Date()): Promise<Processo[]> {
+  const alteracoes = await lerAlteracoes();
   return semear(hoje).map((p) => {
     const alteracao = alteracoes[p.id];
     return alteracao ? aplicarEncerramento(p, alteracao.encerradoEm) : p;
   });
 }
 
-export function listarProcessosDoCliente(clienteId: string, hoje = new Date()) {
-  return listarProcessos(hoje).filter((p) => p.clienteId === clienteId);
+export async function listarProcessosDoCliente(
+  clienteId: string,
+  hoje = new Date(),
+) {
+  return (await listarProcessos(hoje)).filter((p) => p.clienteId === clienteId);
 }
 
-export function encerrarProcesso(id: string, hoje = new Date()): Processo {
+export async function encerrarProcesso(
+  id: string,
+  hoje = new Date(),
+): Promise<Processo> {
   const existe = semear(hoje).some((p) => p.id === id);
   if (!existe) throw new Error(`Processo ${id} não existe.`);
 
-  const alteracoes = lerAlteracoes();
+  const alteracoes = await lerAlteracoes();
   alteracoes[id] = { encerradoEm: hoje.toISOString().slice(0, 10) };
-  gravarJSON(ARQUIVO, alteracoes);
+  // Sem `await` aqui, a linha seguinte leria de volta e devolveria o processo
+  // "encerrado" sem confirmação da escrita, e a tela mostraria sucesso.
+  await gravarJSON(ARQUIVO, alteracoes);
 
-  return listarProcessos(hoje).find((p) => p.id === id)!;
+  return (await listarProcessos(hoje)).find((p) => p.id === id)!;
 }
 
 /**
@@ -92,12 +100,15 @@ export function encerrarProcesso(id: string, hoje = new Date()): Processo {
  * poder desfazer: sem isto, um clique errado obrigaria a mexer em arquivo à
  * mão. As etapas voltam ao que a semente diz, inclusive a estimativa.
  */
-export function reabrirProcesso(id: string, hoje = new Date()): Processo {
-  const alteracoes = lerAlteracoes();
+export async function reabrirProcesso(
+  id: string,
+  hoje = new Date(),
+): Promise<Processo> {
+  const alteracoes = await lerAlteracoes();
   delete alteracoes[id];
-  gravarJSON(ARQUIVO, alteracoes);
+  await gravarJSON(ARQUIVO, alteracoes);
 
-  const processo = listarProcessos(hoje).find((p) => p.id === id);
+  const processo = (await listarProcessos(hoje)).find((p) => p.id === id);
   if (!processo) throw new Error(`Processo ${id} não existe.`);
   return processo;
 }

@@ -37,10 +37,10 @@ export const dynamic = "force-dynamic";
  * suporte. Guia mensal é minoria, então ela aparece só quando existe, e o
  * assunto principal do painel é a etapa em que o trabalho parou.
  */
-export default function PaginaDashboard() {
-  const cliente = clienteLogado();
+export default async function PaginaDashboard() {
+  const cliente = await clienteLogado();
   const obrigacoes = listarObrigacoesDoCliente(cliente.id);
-  const processos = listarProcessosDoCliente(cliente.id);
+  const processos = await listarProcessosDoCliente(cliente.id);
   const faltando = cadastroIncompleto(cliente);
 
   const emAberto = obrigacoes

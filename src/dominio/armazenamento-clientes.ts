@@ -39,34 +39,34 @@ import type {
  */
 const ARQUIVO = "clientes.json";
 
-export function carteiraSomenteLeitura(): boolean {
-  return !podeGravar();
+export async function carteiraSomenteLeitura(): Promise<boolean> {
+  return !(await podeGravar());
 }
 
-function lerOuSemear(): Cliente[] {
-  const gravado = lerJSON<Cliente[]>(ARQUIVO);
+async function lerOuSemear(): Promise<Cliente[]> {
+  const gravado = await lerJSON<Cliente[]>(ARQUIVO);
   if (gravado) return gravado;
   // Sem arquivo e sem permissão de escrita: a demonstração roda com a semente
   // em memória. Perde cadastro novo, não perde a carteira.
-  if (!podeGravar()) return SEED;
-  gravarJSON(ARQUIVO, SEED);
+  if (!(await podeGravar())) return SEED;
+  await gravarJSON(ARQUIVO, SEED);
   return SEED;
 }
 
 const gravar = (lista: Cliente[]) => gravarJSON(ARQUIVO, lista);
 
-export function listarClientes(): Cliente[] {
+export async function listarClientes(): Promise<Cliente[]> {
   return lerOuSemear();
 }
 
-export function buscarClientePorId(id: string) {
-  return listarClientes().find((c) => c.id === id);
+export async function buscarClientePorId(id: string) {
+  return (await listarClientes()).find((c) => c.id === id);
 }
 
 /** Busca por CNPJ tolerando máscara ("31.845.220/0001-88" ou só dígitos). */
-export function buscarClientePorCNPJ(cnpj: string) {
+export async function buscarClientePorCNPJ(cnpj: string) {
   const alvo = apenasDigitos(cnpj);
-  return listarClientes().find((c) => c.cnpj === alvo);
+  return (await listarClientes()).find((c) => c.cnpj === alvo);
 }
 
 export interface NovoClienteEntrada {
@@ -105,8 +105,10 @@ export function proximoId(lista: Cliente[]) {
  * Sem processo e sem obrigação: aquilo entra depois, por outra tela. `null`
  * aqui é o mesmo `null` de `tipos.ts`, "ainda não informado", nunca invenção.
  */
-export function adicionarCliente(entrada: NovoClienteEntrada): Cliente {
-  const lista = listarClientes();
+export async function adicionarCliente(
+  entrada: NovoClienteEntrada,
+): Promise<Cliente> {
+  const lista = await listarClientes();
   const nome = entrada.nomeFantasia.trim();
 
   const cliente: Cliente = {
@@ -133,7 +135,10 @@ export function adicionarCliente(entrada: NovoClienteEntrada): Cliente {
     clienteDesde: new Date().toISOString().slice(0, 10),
   };
 
-  gravar([...lista, cliente]);
+  // `await` obrigatório: sem ele a função devolveria o cliente antes de a
+  // gravação terminar, a Server Action responderia "ok" e o registro poderia
+  // nunca existir. É a Categoria B da auditoria, que o tsc não aponta.
+  await gravar([...lista, cliente]);
   return cliente;
 }
 
@@ -204,18 +209,18 @@ export function fundirCliente(
   };
 }
 
-export function atualizarCliente(
+export async function atualizarCliente(
   id: string,
   entrada: EdicaoClienteEntrada,
-): Cliente {
-  const lista = listarClientes();
+): Promise<Cliente> {
+  const lista = await listarClientes();
   const indice = lista.findIndex((c) => c.id === id);
   if (indice < 0) throw new Error(`Cliente ${id} não existe.`);
 
   const atualizado = fundirCliente(lista[indice], entrada);
   const nova = [...lista];
   nova[indice] = atualizado;
-  gravar(nova);
+  await gravar(nova);
   return atualizado;
 }
 

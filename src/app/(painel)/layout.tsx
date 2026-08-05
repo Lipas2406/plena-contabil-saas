@@ -14,15 +14,18 @@ import { listarProcessosDoCliente } from "@/dominio/armazenamento-processos";
  */
 // clienteLogado() resolve via arquivo persistido, não array estático.
 export const dynamic = "force-dynamic";
-export default function LayoutPainel({
+export default async function LayoutPainel({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cliente = clienteLogado();
+  const cliente = await clienteLogado();
   // Avisos derivados aqui, no servidor: a Topbar é componente de cliente e não
   // deve carregar o domínio inteiro no bundle só para contar pendência.
-  const avisos = avisosDoCliente(cliente, listarProcessosDoCliente(cliente.id));
+  const avisos = avisosDoCliente(
+    cliente,
+    await listarProcessosDoCliente(cliente.id),
+  );
 
   return (
     <div className="min-h-dvh">

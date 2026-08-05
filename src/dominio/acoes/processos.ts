@@ -33,7 +33,12 @@ function tratar(e: unknown): ResultadoProcesso {
 export async function concluirProcesso(id: string): Promise<ResultadoProcesso> {
   if (!id) return { ok: false, erro: "Processo não identificado." };
   try {
-    encerrarProcesso(id);
+    // Sem `await`, esta ação respondia { ok: true } ANTES de a gravação
+    // terminar, o revalidatePath rodava em cima do estado velho e o catch
+    // abaixo deixava de capturar: a rejeição virava erro solto no servidor e a
+    // tela mostrava sucesso. O tsc não aponta isso — quem apontou foi o lint
+    // com tipos ligado na fase 0.
+    await encerrarProcesso(id);
   } catch (e) {
     return tratar(e);
   }
@@ -46,7 +51,7 @@ export async function concluirProcesso(id: string): Promise<ResultadoProcesso> {
 export async function reabrir(id: string): Promise<ResultadoProcesso> {
   if (!id) return { ok: false, erro: "Processo não identificado." };
   try {
-    reabrirProcesso(id);
+    await reabrirProcesso(id);
   } catch (e) {
     return tratar(e);
   }

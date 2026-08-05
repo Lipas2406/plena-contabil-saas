@@ -39,20 +39,20 @@ export const dynamic = "force-dynamic";
  * o painel "flat": a contadora cruza cliente com tarefa o dia inteiro, e
  * espalhar isso em quatro rotas transformaria o trabalho dela em navegação.
  */
-export default function PaginaEscritorio() {
-  const resumo = resumoDoEscritorio();
-  const carteira = montarCarteira();
-  const tarefas = tarefasDoEscritorio();
-  const prazos = linhaDoTempo();
+export default async function PaginaEscritorio() {
+  const resumo = await resumoDoEscritorio();
+  const carteira = await montarCarteira();
+  const tarefas = await tarefasDoEscritorio();
+  const prazos = await linhaDoTempo();
   const documentos = documentosAguardando();
 
   const nomesPorCliente = Object.fromEntries(
-    listarClientes().map((c) => [c.id, c.nomeFantasia]),
+    (await listarClientes()).map((c) => [c.id, c.nomeFantasia]),
   );
 
   // Uma leitura só por render. Estava sendo chamado duas vezes (no NovoCliente
   // e no ListaClientes); com banco, cada chamada vira ida à rede.
-  const somenteLeitura = carteiraSomenteLeitura();
+  const somenteLeitura = await carteiraSomenteLeitura();
 
   const criticos = carteira.filter((c) => c.sinal === "critico").length;
   const atencao = carteira.filter((c) => c.sinal === "atencao").length;

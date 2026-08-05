@@ -10,8 +10,8 @@ import { buscarClientePorId } from "@/dominio/armazenamento-clientes";
 
 const ID_CLIENTE_LOGADO = "cli-003";
 
-export function clienteLogado() {
-  const cliente = buscarClientePorId(ID_CLIENTE_LOGADO);
+export async function clienteLogado() {
+  const cliente = await buscarClientePorId(ID_CLIENTE_LOGADO);
   if (!cliente) {
     throw new Error(
       `Cliente ${ID_CLIENTE_LOGADO} não existe no mock. Ajuste src/dominio/sessao.ts.`,

@@ -22,8 +22,8 @@ export const consultarVencimentos = definirFerramenta({
   descricao:
     "Consulta os impostos e obrigações fiscais a vencer de uma empresa cliente da Plena Contábil, a partir do CNPJ. Use sempre que perguntarem o que está a vencer, o que está atrasado, quanto a empresa deve ou quando pagar.",
   parametros,
-  executar: ({ cnpj, incluirPagos = false }) => {
-    const cliente = buscarClientePorCNPJ(cnpj);
+  executar: async ({ cnpj, incluirPagos = false }) => {
+    const cliente = await buscarClientePorCNPJ(cnpj);
     if (!cliente) {
       return naoEncontrado(
         "Nenhum cliente com esse CNPJ na carteira da Plena. Confirme o número com o cliente.",

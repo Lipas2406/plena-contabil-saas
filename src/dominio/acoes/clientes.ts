@@ -46,7 +46,7 @@ export async function criarCliente(
 
   let cliente;
   try {
-    cliente = adicionarCliente(dados);
+    cliente = await adicionarCliente(dados);
   } catch (e) {
     // A UI já esconde o botão quando a carteira é somente leitura. Este ramo
     // cobre quem chegar pela Server Action direto, e o importante é não fingir
@@ -94,7 +94,7 @@ export async function editarCliente(
 
   let cliente;
   try {
-    cliente = atualizarCliente(id, dados);
+    cliente = await atualizarCliente(id, dados);
   } catch (e) {
     if (e instanceof CarteiraSomenteLeituraError) {
       return {
