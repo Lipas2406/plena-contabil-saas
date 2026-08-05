@@ -389,6 +389,44 @@ console.log(
     "o guia explica como sair",
     /\bSair\b/.test(fonte) && /menu/i.test(fonte),
   );
+
+  /*
+    Mesma família das duas acima, terceira ocorrência: o guia negando algo que
+    passou a existir.
+
+    Até 05/08/2026 a lista "O que ainda NÃO existe" trazia "Excluir cliente: dá
+    para editar, excluir não". No dia em que arquivar entrou, virou meia
+    verdade: apagar de vez continua não existindo (de propósito), mas tirar um
+    cliente da carteira passou a existir, e quem lesse aquilo procuraria pelo
+    botão em vão.
+
+    A checagem exige as DUAS metades, porque só uma delas engana:
+    - que o guia ensine a arquivar (senão o botão fica órfão);
+    - que ele continue avisando que apagar de vez não existe (senão a contadora
+      supõe que arquivar apaga, e é justamente o oposto).
+
+    Busca frases soltas, sem depender de vizinhança com rótulo: foi assim que a
+    checagem do login nasceu quebrada, casando `[^<]*` contra JSX que tem tag no
+    meio da frase.
+  */
+  checar(
+    "o guia ensina a arquivar cliente",
+    /Arquivar/.test(fonte) && /Reativar cliente/.test(fonte),
+  );
+  checar(
+    "o guia diz que arquivar NÃO apaga",
+    /não apaga nada/i.test(fonte),
+  );
+  checar(
+    "o guia ensina a achar o que foi arquivado",
+    /Ver arquivados/i.test(fonte),
+  );
+  // A frase antiga, palavra por palavra. Se voltar, o guia estará negando uma
+  // função que existe.
+  checar(
+    "o guia NÃO afirma mais que só dá para editar",
+    !/dá para editar, excluir não/i.test(fonte),
+  );
 }
 
 // Kanban e fila de documentos guardam estado só em memória e perdem tudo ao

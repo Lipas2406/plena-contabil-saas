@@ -6,7 +6,7 @@ import {
   motion,
   useReducedMotion,
 } from "framer-motion";
-import { ArrowRight, Lock, X } from "lucide-react";
+import { Archive, ArrowRight, Lock, X } from "lucide-react";
 import { Etiqueta } from "@/kernel/ui/tabela";
 import { formatarCNPJ } from "@/kernel/br";
 import { formatarData } from "@/kernel/datas";
@@ -14,6 +14,7 @@ import { cn } from "@/kernel/cn";
 import { progressoDoProcesso } from "@/dominio/tipos";
 import { EncerrarProcesso } from "@/componentes/escritorio/encerrar-processo";
 import { NovoCliente } from "@/componentes/escritorio/novo-cliente";
+import { ArquivarCliente } from "@/componentes/escritorio/arquivar-cliente";
 import type { ClienteNaCarteira, SinalCliente } from "@/dominio/escritorio";
 
 const SEMAFORO: Record<
@@ -46,8 +47,17 @@ export function ListaClientes({
   somenteLeitura?: boolean;
 }) {
   const [abertoId, setAbertoId] = useState<string | null>(null);
+  const [verArquivados, setVerArquivados] = useState(false);
   const reduzir = useReducedMotion();
   const selecionado = carteira.find((c) => c.cliente.id === abertoId) ?? null;
+
+  // Arquivado só aparece a pedido. A contagem no botão existe para o arquivo
+  // não virar buraco negro: quem arquivou por engano precisa ver que há algo
+  // ali para trazer de volta.
+  const arquivados = carteira.filter((c) => c.cliente.status === "inativo");
+  const visiveis = verArquivados
+    ? carteira
+    : carteira.filter((c) => c.cliente.status !== "inativo");
 
   useEffect(() => {
     if (!selecionado) return;
@@ -73,8 +83,24 @@ export function ListaClientes({
 
   return (
     <>
+      {arquivados.length > 0 && (
+        <div className="mb-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setVerArquivados((v) => !v)}
+            aria-pressed={verArquivados}
+            className="flex items-center gap-2 rounded-[var(--radius-card)] px-3 py-1.5 text-xs font-medium text-texto-suave transition-colors hover:bg-white/5 hover:text-texto"
+          >
+            <Archive className="size-3.5" aria-hidden />
+            {verArquivados
+              ? "Esconder arquivados"
+              : `Ver ${arquivados.length} arquivado${arquivados.length > 1 ? "s" : ""}`}
+          </button>
+        </div>
+      )}
+
       <ul className="grid gap-3 xl:grid-cols-2">
-        {carteira.map((item) => {
+        {visiveis.map((item) => {
           const s = SEMAFORO[item.sinal];
           const c = item.cliente;
 
@@ -89,10 +115,19 @@ export function ListaClientes({
                 className={cn(
                   "group flex w-full items-center gap-4 rounded-[var(--radius-card)] p-4 text-left",
                   "vidro transition-shadow duration-300 hover:shadow-[var(--sombra-elevada)]",
+                  // Arquivado apagado, e o semáforo desligado junto: manter a
+                  // bolinha vermelha em quem saiu da carteira seria cobrar por
+                  // trabalho que a contadora já decidiu não fazer.
+                  c.status === "inativo" && "opacity-55 saturate-50",
                 )}
               >
                 <span
-                  className={cn("size-2.5 shrink-0 rounded-full", s.ponto, s.halo)}
+                  className={cn(
+                    "size-2.5 shrink-0 rounded-full",
+                    c.status === "inativo"
+                      ? "bg-texto-suave/40"
+                      : cn(s.ponto, s.halo),
+                  )}
                   aria-hidden
                 />
 
@@ -116,7 +151,9 @@ export function ListaClientes({
                 </span>
 
                 <span className="flex shrink-0 items-center gap-3">
-                  <Etiqueta tom={s.tom}>{s.rotulo}</Etiqueta>
+                  <Etiqueta tom={c.status === "inativo" ? "neutro" : s.tom}>
+                    {c.status === "inativo" ? "Arquivado" : s.rotulo}
+                  </Etiqueta>
                   <ArrowRight
                     className="size-4 text-texto-suave opacity-0 transition-opacity group-hover:opacity-100"
                     aria-hidden
@@ -204,16 +241,31 @@ function DetalheCliente({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Etiqueta tom={s.tom}>{s.rotulo}</Etiqueta>
-        {item.diasSemFechar !== null && (
+        {/* Mesma regra do card na lista: arquivado não exibe semáforo. Sem
+            isto, o painel dizia "Travado" num cliente que já saiu da carteira,
+            contradizendo a própria lista que o mostra como "Arquivado". */}
+        {c.status === "inativo" ? (
+          <Etiqueta tom="neutro">Arquivado</Etiqueta>
+        ) : (
+          <Etiqueta tom={s.tom}>{s.rotulo}</Etiqueta>
+        )}
+        {item.diasSemFechar !== null && c.status !== "inativo" && (
           <Etiqueta tom="neutro">aberto há {item.diasSemFechar} dias</Etiqueta>
         )}
       </div>
 
       {/* O painel aponta o que falta logo abaixo; o botão fica junto para a
           correção acontecer onde a lacuna aparece, e não em outra tela. */}
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <NovoCliente cliente={c} somenteLeitura={somenteLeitura} />
+        {/* Arquivar fica ao lado de editar, não escondido em menu: o pedido de
+            05/08 foi por confirmação, não por dificuldade de achar. Quem
+            precisa arquivar já decidiu antes de abrir a tela. */}
+        <ArquivarCliente
+          cliente={c}
+          somenteLeitura={somenteLeitura}
+          aoMudar={aoFechar}
+        />
       </div>
 
       <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[var(--borda-suave)] pt-5 text-sm">

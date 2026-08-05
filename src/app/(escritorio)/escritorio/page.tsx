@@ -6,6 +6,7 @@ import { listarClientes } from "@/dominio/armazenamento-clientes";
 import { documentosAguardando } from "@/dominio/mocks/documentos";
 import {
   linhaDoTempo,
+  ativos,
   montarCarteira,
   resumoDoEscritorio,
   tarefasDoEscritorio,
@@ -59,8 +60,11 @@ export default async function PaginaEscritorio() {
   // e no ListaClientes); com banco, cada chamada vira ida à rede.
   const somenteLeitura = await carteiraSomenteLeitura();
 
-  const criticos = carteira.filter((c) => c.sinal === "critico").length;
-  const atencao = carteira.filter((c) => c.sinal === "atencao").length;
+  // Arquivado sai dos alertas: ver `ativos` em escritorio.ts. A lista recebe a
+  // carteira inteira, porque é lá que se reativa.
+  const naCarteira = ativos(carteira);
+  const criticos = naCarteira.filter((c) => c.sinal === "critico").length;
+  const atencao = naCarteira.filter((c) => c.sinal === "atencao").length;
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-12">

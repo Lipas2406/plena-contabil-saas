@@ -274,6 +274,38 @@ export default async function Pagina() {
         </Secao>
 
         <Secao
+          titulo="Tirar um cliente da carteira"
+          resumo="Quando o cliente sai, ou foi cadastrado errado"
+        >
+          <ol className="space-y-2">
+            <Passo n={1}>Toque no cliente.</Passo>
+            <Passo n={2}>
+              Toque em <N>Arquivar</N>.
+            </Passo>
+            <Passo n={3}>
+              A tela mostra o que vai acontecer. Confirme em{" "}
+              <N>Arquivar cliente</N>.
+            </Passo>
+          </ol>
+          <p>
+            <N>Arquivar não apaga nada.</N> O cliente sai da lista e das
+            contagens do topo, e você para de receber os avisos de vencimento
+            dele. O cadastro, os documentos e o histórico continuam guardados
+            do jeito que estavam.
+          </p>
+          <p>
+            Para trazer de volta: no alto da lista de clientes aparece{" "}
+            <N>Ver arquivados</N>. Toque nele, toque no cliente e depois em{" "}
+            <N>Reativar cliente</N>. Ele volta como estava.
+          </p>
+          <p className="text-xs">
+            Não existe apagar de vez, e isso é de propósito: documento contábil
+            tem prazo de guarda, e apagar o cliente levaria junto o rastro de
+            tudo que já foi entregue por ele.
+          </p>
+        </Secao>
+
+        <Secao
           titulo="Concluir um serviço"
           resumo="Quando a abertura, a regularização ou a declaração termina"
         >
@@ -339,7 +371,9 @@ export default async function Pagina() {
               WhatsApp.
             </li>
             <li>
-              <N>Excluir cliente:</N> dá para editar, excluir não.
+              <N>Apagar um cliente de vez:</N> não existe, de propósito. Para
+              tirar um cliente da carteira, use <N>Arquivar</N> (tem uma seção
+              só sobre isso acima).
             </li>
             <li>
               <N>Mover cartão no quadro de tarefas:</N> move na tela, mas{" "}

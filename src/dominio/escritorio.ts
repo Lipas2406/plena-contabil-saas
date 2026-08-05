@@ -101,9 +101,21 @@ export async function montarCarteira(
   });
 }
 
+/**
+ * Só os clientes que ainda estão na carteira do dia a dia.
+ *
+ * Cliente arquivado continua na lista (é assim que se reativa), mas não pode
+ * entrar em contagem nem em alerta: quem arquivou fez isso justamente para
+ * parar de ser cobrado por ele. Um arquivado somando em "travadas" mandaria a
+ * contadora atrás de trabalho que ela já decidiu não fazer.
+ */
+export function ativos(carteira: ClienteNaCarteira[]) {
+  return carteira.filter((c) => c.cliente.status !== "inativo");
+}
+
 /** Os 4 números do topo. Todos derivados, nenhum digitado. */
 export async function resumoDoEscritorio(hoje = new Date()) {
-  const carteira = await montarCarteira(hoje);
+  const carteira = ativos(await montarCarteira(hoje));
   return {
     clientes: carteira.length,
     tarefasAbertas: carteira.reduce((s, c) => s + c.etapasAbertas, 0),

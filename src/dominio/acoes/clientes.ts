@@ -3,10 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { apenasDigitos } from "@/kernel/br";
 import { exigirSessao } from "@/dominio/auth/sessao";
+import { cadastroIncompleto } from "@/dominio/mocks/clientes";
+import type { StatusCliente } from "@/dominio/tipos";
 import {
   adicionarCliente,
+  buscarClientePorId,
   atualizarCliente,
   CarteiraSomenteLeituraError,
+  definirStatusCliente,
   type EdicaoClienteEntrada,
   type NovoClienteEntrada,
 } from "@/dominio/armazenamento-clientes";
@@ -104,6 +108,63 @@ export async function editarCliente(
   let cliente;
   try {
     cliente = await atualizarCliente(id, dados);
+  } catch (e) {
+    if (e instanceof CarteiraSomenteLeituraError) {
+      return {
+        ok: false,
+        erro: "Esta demonstração está publicada em modo somente leitura, então a alteração não é salva. Rodando local, ela funciona.",
+      };
+    }
+    return { ok: false, erro: e instanceof Error ? e.message : "Falha ao salvar." };
+  }
+
+  revalidatePath("/escritorio");
+  revalidatePath("/painel");
+
+  return { ok: true, cliente: { id: cliente.id, nomeFantasia: cliente.nomeFantasia } };
+}
+
+/**
+ * Arquiva um cliente, ou o traz de volta.
+ *
+ * O nome importa: **não existe excluir** neste sistema, e a razão é dupla.
+ * A legal, que manda: documento contábil tem prazo de guarda, e apagar o
+ * cliente levaria junto o rastro de tudo que foi entregue por ele. A técnica,
+ * que confirma: processos, documentos e obrigações apontam para o cliente com
+ * chave estrangeira RESTRICT, então o próprio banco recusaria o DELETE.
+ *
+ * A confirmação da tela cobre o resto: arquivar por engano é reversível aqui,
+ * mas ainda tira o cliente da vista de quem depende dela para saber o que
+ * fazer no dia.
+ */
+export async function arquivarCliente(
+  id: string,
+  arquivar: boolean,
+): Promise<ResultadoCriarCliente> {
+  // Mesma razão das outras: Server Action é alcançável por POST direto.
+  await exigirSessao();
+
+  if (!id) return { ok: false, erro: "Cliente não identificado." };
+
+  let cliente;
+  try {
+    let destino: StatusCliente = "inativo";
+
+    if (!arquivar) {
+      // Reativar tem que devolver o cliente ao estado que ele tinha, senão a
+      // promessa da tela ("volta como estava") é mentira. Como o status
+      // anterior não é guardado em lugar nenhum, ele é RECALCULADO pela mesma
+      // regra que classifica o resto da carteira: cadastro com lacuna é
+      // "pendente", cadastro completo é "ativo".
+      //
+      // Sem isto, um cliente "pendente" arquivado por engano voltava "ativo", e
+      // a informação de que faltava dado no cadastro sumia no caminho.
+      const atual = await buscarClientePorId(id);
+      if (!atual) return { ok: false, erro: "Cliente não existe." };
+      destino = cadastroIncompleto(atual).length > 0 ? "pendente" : "ativo";
+    }
+
+    cliente = await definirStatusCliente(id, destino);
   } catch (e) {
     if (e instanceof CarteiraSomenteLeituraError) {
       return {

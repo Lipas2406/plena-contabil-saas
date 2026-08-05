@@ -12,6 +12,7 @@ import type {
   NaturezaJuridica,
   PorteEmpresa,
   RegimeTributario,
+  StatusCliente,
   TipoPessoa,
 } from "@/dominio/tipos";
 
@@ -260,3 +261,29 @@ export async function atualizarCliente(
 
 /** Nome antigo, mantido para quem já importava. */
 export { ArmazenamentoSomenteLeituraError as CarteiraSomenteLeituraError };
+
+/**
+ * Arquiva ou reativa um cliente.
+ *
+ * Arquivar é o mais perto de "excluir" que este sistema chega, e de propósito.
+ * Documento contábil tem prazo legal de guarda, cliente que sai volta, e o
+ * histórico do trabalho feito não pode evaporar por um clique errado. O
+ * cliente arquivado sai da carteira do dia a dia e continua achável.
+ */
+export async function definirStatusCliente(
+  id: string,
+  status: StatusCliente,
+): Promise<Cliente> {
+  if (bancoConfigurado())
+    return (await repositorio()).definirStatusCliente(id, status);
+
+  const lista = await listarClientes();
+  const indice = lista.findIndex((c) => c.id === id);
+  if (indice < 0) throw new Error(`Cliente ${id} não existe.`);
+
+  const atualizado = { ...lista[indice], status };
+  const nova = [...lista];
+  nova[indice] = atualizado;
+  await gravar(nova);
+  return atualizado;
+}

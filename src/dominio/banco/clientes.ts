@@ -205,3 +205,33 @@ export async function atualizarCliente(
   if (!linhas[0]) throw new Error(`Cliente ${id} não existe.`);
   return paraDominio(linhas[0]);
 }
+
+/**
+ * Troca só o status do cliente. Arquivar e reativar passam por aqui.
+ *
+ * Está separado de `atualizarCliente` de propósito: status não é campo de
+ * cadastro. Se ele viajasse junto no formulário, um salvamento comum poderia
+ * arquivar cliente por acidente, que é exatamente o risco que a confirmação da
+ * tela existe para evitar.
+ *
+ * Não há DELETE aqui nem em lugar nenhum, e não é esquecimento: as chaves
+ * estrangeiras de processos, documentos e obrigações são RESTRICT. Apagar um
+ * cliente com histórico seria recusado pelo banco, e apagar um sem histórico
+ * ainda assim jogaria fora cadastro que a contadora digitou.
+ */
+export async function definirStatusCliente(
+  id: string,
+  status: StatusCliente,
+): Promise<Cliente> {
+  const sql = obterSql();
+
+  const linhas = (await sql`
+    UPDATE clientes
+       SET status = ${status}, atualizado_em = now()
+     WHERE id = ${id}
+    RETURNING ${sql.unsafe(COLUNAS)}
+  `) as LinhaCliente[];
+
+  if (!linhas[0]) throw new Error(`Cliente ${id} não existe.`);
+  return paraDominio(linhas[0]);
+}
