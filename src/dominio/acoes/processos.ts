@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ArmazenamentoSomenteLeituraError } from "@/dominio/armazenamento-base";
+import { exigirSessao } from "@/dominio/auth/sessao";
 import {
   encerrarProcesso,
   reabrirProcesso,
@@ -31,6 +32,9 @@ function tratar(e: unknown): ResultadoProcesso {
  * estimativa e o aviso "Andamento a confirmar" some sozinho.
  */
 export async function concluirProcesso(id: string): Promise<ResultadoProcesso> {
+  // Server Action é alcançável por POST direto, sem passar pela tela.
+  await exigirSessao();
+
   if (!id) return { ok: false, erro: "Processo não identificado." };
   try {
     // Sem `await`, esta ação respondia { ok: true } ANTES de a gravação
@@ -49,6 +53,8 @@ export async function concluirProcesso(id: string): Promise<ResultadoProcesso> {
 
 /** Desfaz o encerramento. Clique errado não pode virar conserto em arquivo. */
 export async function reabrir(id: string): Promise<ResultadoProcesso> {
+  await exigirSessao();
+
   if (!id) return { ok: false, erro: "Processo não identificado." };
   try {
     await reabrirProcesso(id);

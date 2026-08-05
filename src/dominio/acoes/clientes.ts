@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { apenasDigitos } from "@/kernel/br";
+import { exigirSessao } from "@/dominio/auth/sessao";
 import {
   adicionarCliente,
   atualizarCliente,
@@ -27,6 +28,11 @@ export interface ResultadoCriarCliente {
 export async function criarCliente(
   dados: NovoClienteEntrada,
 ): Promise<ResultadoCriarCliente> {
+  // Conferir na PÁGINA não protege esta ação: Server Action é alcançável por
+  // POST direto, sem passar pela tela. A doc do Next avisa isso em três
+  // lugares distintos, e por isso a verificação se repete aqui.
+  await exigirSessao();
+
   const nome = dados.nomeFantasia?.trim();
   if (!nome) {
     return { ok: false, erro: "Nome é obrigatório." };
@@ -80,6 +86,9 @@ export async function editarCliente(
   id: string,
   dados: EdicaoClienteEntrada,
 ): Promise<ResultadoCriarCliente> {
+  // Mesma razão de `criarCliente`: a ação é alcançável por POST direto.
+  await exigirSessao();
+
   if (!id) return { ok: false, erro: "Cliente não identificado." };
 
   if (dados.nomeFantasia !== undefined && !dados.nomeFantasia.trim()) {

@@ -17,6 +17,7 @@ import { ListaClientes } from "@/componentes/escritorio/lista-clientes";
 import { NovoCliente } from "@/componentes/escritorio/novo-cliente";
 import { carteiraSomenteLeitura } from "@/dominio/armazenamento-clientes";
 import { NumeroAnimado } from "@/componentes/escritorio/numero-animado";
+import { exigirSessao } from "@/dominio/auth/sessao";
 
 export const metadata = {
   title: "Escritório (Plena Contábil)",
@@ -40,6 +41,10 @@ export const dynamic = "force-dynamic";
  * espalhar isso em quatro rotas transformaria o trabalho dela em navegação.
  */
 export default async function PaginaEscritorio() {
+  // Proteção de verdade. O `proxy.ts` só olha se o cookie existe; é aqui que o
+  // token é resolvido contra a tabela de sessões.
+  await exigirSessao();
+
   const resumo = await resumoDoEscritorio();
   const carteira = await montarCarteira();
   const tarefas = await tarefasDoEscritorio();
