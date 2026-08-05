@@ -128,11 +128,16 @@ export const CATALOGO: ObrigacaoCatalogo[] = [
     natureza: "declaracao",
     periodicidade: "mensal",
     regra: { tipo: "dia-do-mes-seguinte", dia: 20 },
-    ajuste: "prorroga",
+    // `fixo`, e não `prorroga`: a Resolução CGSN 140/2018 manda prorrogar o
+    // PAGAMENTO do DAS, não a entrega da declaração. Presumir que a declaração
+    // segue o mesmo caminho é justamente o erro que a contadora apontou —
+    // "não confundir com o DAS".
+    ajuste: "fixo",
     aplicabilidade: { regimes: ["Simples Nacional"] },
     devidaSemMovimento: true,
     orgao: "Simples Nacional",
-    pendenteValidacao: "Regra de dia não útil não confirmada em fonte oficial.",
+    pendenteValidacao:
+      "Prazo de entrega é dia 20, mas a regra de dia não útil da DECLARAÇÃO não está em ato expresso. Conferir a agenda do mês antes de avisar.",
   },
   {
     sigla: "DEFIS",
@@ -144,7 +149,8 @@ export const CATALOGO: ObrigacaoCatalogo[] = [
     aplicabilidade: { regimes: ["Simples Nacional"] },
     devidaSemMovimento: true,
     orgao: "Simples Nacional",
-    pendenteValidacao: "Regra de dia não útil não confirmada em fonte oficial.",
+    pendenteValidacao:
+      "31/03 vem da Resolução CGSN 140/2018. Não aplicar próximo dia útil automaticamente: conferir prorrogação específica do ano.",
   },
 
   // ---------- Lucro Presumido ----------
@@ -222,14 +228,34 @@ export const CATALOGO: ObrigacaoCatalogo[] = [
     periodicidade: "mensal",
     // Repare: dia 20 do SEGUNDO mês seguinte. É a armadilha do "dia 20".
     regra: { tipo: "dia-de-mes-posterior", dia: 20, meses: 2 },
-    ajuste: "antecipa",
+    // `fixo`: a contadora orientou não presumir deslocamento para a DIRBI.
+    ajuste: "fixo",
     aplicabilidade: {
       regimes: ["Lucro Presumido", "Lucro Real"],
       condicao: "Só se a empresa usufrui benefício fiscal listado na IN RFB 2.198/2024.",
     },
     devidaSemMovimento: false,
     orgao: "Receita Federal",
-    pendenteValidacao: "Regra de dia não útil não confirmada em fonte oficial.",
+    pendenteValidacao:
+      "Dia 20 do 2º mês seguinte confirmado. Regra de dia não útil: conferir a Agenda Tributária do mês, não presumir.",
+  },
+
+  {
+    sigla: "EFD-Reinf",
+    nome: "Escrituração Fiscal Digital de Retenções e Outras Informações",
+    natureza: "declaracao",
+    periodicidade: "mensal",
+    regra: { tipo: "dia-do-mes-seguinte", dia: 15 },
+    // ANTECIPA, e a contadora reforçou o ponto: esta não pode ir para segunda.
+    // Ex.: 15/08/2026 cai num sábado, o prazo vira 14/08.
+    ajuste: "antecipa",
+    aplicabilidade: {
+      regimes: ["Lucro Presumido", "Lucro Real"],
+      condicao:
+        "Disparada por RETENÇÃO, que pode existir sem nenhum empregado. Sem fatos a informar no período, é dispensada — nem 'sem movimento' se envia.",
+    },
+    devidaSemMovimento: false,
+    orgao: "Receita Federal / SPED",
   },
 
   // ---------- Com empregado: vale para QUALQUER regime ----------
@@ -311,6 +337,25 @@ export const CATALOGO: ObrigacaoCatalogo[] = [
     orgao: "Receita Federal",
     pendenteValidacao:
       "Limites de obrigatoriedade (valores) não levantados. Estão na IN RFB 2.312/2026.",
+  },
+  {
+    sigla: "GCAP",
+    nome: "DARF de ganho de capital",
+    natureza: "guia",
+    periodicidade: "eventual",
+    // Nasce da venda, não do calendário: vence no último dia útil do mês
+    // seguinte ao da alienação. A competência a informar é o mês da operação.
+    regra: { tipo: "ultimo-dia-util-mes-seguinte" },
+    ajuste: "fixo",
+    aplicabilidade: {
+      apenasPessoaFisica: true,
+      condicao:
+        "Só quando houve alienação com ganho. O documento sai do programa GCAP da Receita.",
+    },
+    devidaSemMovimento: false,
+    orgao: "Receita Federal",
+    pendenteValidacao:
+      "Prazo levantado em pesquisa do Filipe, ainda sem transcrição de fonte oficial. Multa informada: 0,33% ao dia, teto de 20%, mais Selic acumulada e 1% no mês do pagamento.",
   },
   {
     sigla: "Carne-Leao",
@@ -413,6 +458,58 @@ export function calcularVencimento(
   }
 
   return ajustarVencimento(bruta, obrigacao.ajuste);
+}
+
+/**
+ * A data que a contadora quer ver para avisar o cliente.
+ *
+ * ── A regra que ela deu, em 04/08/2026, e o motivo dela ──────────────────
+ * "Se o vencimento for dia 20 e cair num sábado, ele tem que pagar dia 19. Se
+ * o sistema marcou dia 22 e cair no meu segundo, não vai mudar nada. Mas a
+ * regra nunca passa da data de vencimento."
+ *
+ * Traduzindo: para AVISAR, ela nunca quer uma data depois do dia nominal.
+ * Pagar antes nunca é problema; pagar depois é multa do cliente dela.
+ *
+ * Isso NÃO substitui `calcularVencimento`, que continua devolvendo o prazo
+ * legal — inclusive prorrogado, quando a lei prorroga. As duas datas coexistem
+ * de propósito:
+ *
+ * - `calcularVencimento` responde "qual é o prazo legal", e é o que vale para
+ *   registro, para conferir multa e para não afirmar coisa errada.
+ * - `calcularDataDeAviso` responde "quando eu falo com o cliente", e é o que
+ *   vai para a tela dela.
+ *
+ * Fundir as duas seria escolher entre estar certo e ser útil. O sistema
+ * consegue as duas coisas guardando as duas.
+ */
+export function calcularDataDeAviso(
+  obrigacao: ObrigacaoCatalogo,
+  competencia: string,
+): Date {
+  const legal = calcularVencimento(obrigacao, competencia);
+  if (obrigacao.ajuste !== "prorroga") return legal;
+
+  // Só a família que PRORROGA precisa de correção: a lei empurra para depois
+  // do dia nominal, e ela quer o contrário. Recalcula antecipando.
+  const clone: ObrigacaoCatalogo = { ...obrigacao, ajuste: "antecipa" };
+  return calcularVencimento(clone, competencia);
+}
+
+/**
+ * As duas datas de uma obrigação, lado a lado.
+ *
+ * `divergem` é `true` quando a lei permite pagar depois do dia nominal e a
+ * contadora prefere antecipar. A tela usa isso para explicar a diferença em
+ * vez de esconder uma das duas.
+ */
+export function datasDaObrigacao(
+  obrigacao: ObrigacaoCatalogo,
+  competencia: string,
+): { legal: Date; aviso: Date; divergem: boolean } {
+  const legal = calcularVencimento(obrigacao, competencia);
+  const aviso = calcularDataDeAviso(obrigacao, competencia);
+  return { legal, aviso, divergem: legal.getTime() !== aviso.getTime() };
 }
 
 /** Contexto mínimo do cliente para decidir o que se aplica a ele. */
