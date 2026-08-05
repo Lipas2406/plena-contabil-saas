@@ -125,6 +125,33 @@ export default async function Pagina() {
       ) : null}
 
       <div className="mt-6 space-y-3">
+        {/* Primeira seção de propósito: é a primeira coisa que acontece no dia
+            dela. Até 05/08/2026 o guia negava a existência de login, o que
+            deixou de ser verdade no dia em que o acesso entrou.
+            `scripts/verificar.mts` agora impede essa afirmação de voltar — e a
+            checagem lê o FONTE, então nem em comentário a frase pode aparecer. */}
+        <Secao titulo="Entrar e sair" resumo="Agora o sistema tem senha" aberta>
+          <p>
+            O sistema pede <N>e-mail e senha</N>. Se você fechar o navegador e
+            voltar depois, continua conectada: o acesso vale{" "}
+            <N>30 dias</N> antes de pedir a senha de novo.
+          </p>
+          <p>
+            Para sair, o botão <N>Sair</N> fica no fim do menu, embaixo de{" "}
+            <N>Ver como cliente</N>. Use quando estiver num computador que não é
+            só seu.
+          </p>
+          <p>
+            <N>Esqueceu a senha?</N> Fale com o Filipe. Não existe botão de
+            recuperar aqui de propósito: a senha é criada fora do sistema, e nem
+            ele consegue ler a atual, só trocar por outra.
+          </p>
+          <p className="text-xs">
+            Não existe tela de criar conta. Quem tem acesso é quem você
+            autorizar.
+          </p>
+        </Secao>
+
         <Secao
           titulo="As duas telas"
           resumo="Qual é a sua e qual o cliente vê"
@@ -304,9 +331,6 @@ export default async function Pagina() {
           resumo="Para você não procurar botão que não tem"
         >
           <ul className="space-y-2">
-            <li>
-              <N>Login:</N> o sistema abre direto, sem senha.
-            </li>
             <li>
               <N>Mensagens:</N> continua no WhatsApp.
             </li>

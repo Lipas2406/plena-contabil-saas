@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/kernel/cn";
+import { BotaoSair } from "@/componentes/auth/botao-sair";
 
 /**
  * Menu do escritório.
@@ -221,6 +222,13 @@ function ConteudoSidebarEscritorio({
           <ExternalLink className="size-[18px]" aria-hidden />
           Ver como cliente
         </Link>
+
+        {/* Separado dos dois de cima: aqueles levam a algum lugar, este
+            encerra a sessão. Agrupar ação destrutiva com navegação é como se
+            clica em sair sem querer. */}
+        <div className="mt-1 border-t border-[var(--borda-suave)] pt-1">
+          <BotaoSair aoNavegar={aoNavegar} />
+        </div>
       </div>
     </>
   );

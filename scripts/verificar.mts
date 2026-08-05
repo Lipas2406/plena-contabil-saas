@@ -356,6 +356,39 @@ console.log(
     "a promessa de gravação vive dentro do condicional",
     promessa !== -1 && condicional !== -1 && condicional < promessa,
   );
+
+  /*
+    O guia não pode dizer que o sistema não tem login.
+
+    Até 05/08/2026 a seção "O que ainda NÃO existe" listava "Login: o sistema
+    abre direto, sem senha". Virou mentira no dia em que o acesso entrou, e
+    ninguém teria percebido: é texto estático, nenhuma checagem olhava para ele,
+    e a contadora leria aquilo como verdade.
+
+    É a mesma família de defeito de `affordance-falsa`, com o sinal trocado —
+    ali o guia prometia um botão que não existia; aqui ele negava uma proteção
+    que existe.
+  */
+  /*
+    A primeira versão desta checagem era `/Login:[^&lt;]*(sem senha|abre direto)/i`
+    e NÃO pegava nada: no JSX o texto vem como `<N>Login:</N> o sistema abre
+    direto`, então `[^<]*` parava no `<` de `</N>` antes de alcançar a frase.
+    Ela passou tranquilamente com a mentira reintroduzida no arquivo.
+
+    Era o mesmo defeito que ela existe para impedir — teste verde olhando para
+    o lugar errado —, e só apareceu porque a checagem foi testada por mutação.
+    Agora procura as frases direto, sem depender de proximidade com "Login:".
+  */
+  const negaLogin = /sem senha|abre direto/i.test(fonte);
+  checar("o guia NÃO afirma que o sistema abre sem senha", !negaLogin);
+  checar(
+    "o guia explica como entrar",
+    /e-mail e senha/i.test(fonte),
+  );
+  checar(
+    "o guia explica como sair",
+    /\bSair\b/.test(fonte) && /menu/i.test(fonte),
+  );
 }
 
 // Kanban e fila de documentos guardam estado só em memória e perdem tudo ao
