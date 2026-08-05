@@ -11,7 +11,8 @@
     "verificar": "tsx scripts/verificar.mts",
     "checar-tudo": "npm run typecheck && npm run lint && npm run verificar && npm run build",
     "migrar": "tsx scripts/migrar.mts",
-    "semear": "tsx scripts/semear.mts"
+    "semear": "tsx scripts/semear.mts",
+    "criar-usuario": "tsx scripts/criar-usuario.mts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.90",
