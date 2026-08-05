@@ -4,6 +4,7 @@ import {
   lerJSON,
   podeGravar,
 } from "@/dominio/armazenamento-base";
+import { bancoConfigurado } from "@/dominio/banco/conexao";
 import { apenasDigitos } from "@/kernel/br";
 import { CLIENTES as SEED } from "@/dominio/mocks/clientes";
 import type {
@@ -39,7 +40,32 @@ import type {
  */
 const ARQUIVO = "clientes.json";
 
+/**
+ * Onde a carteira mora, neste ambiente.
+ *
+ * Com `DATABASE_URL` definida, é o Postgres; sem ela, o arquivo em `.dados/`.
+ * O fallback existe para o projeto continuar rodando numa máquina sem banco
+ * configurado — não é modo de produção.
+ *
+ * O import do módulo de banco é DINÂMICO de propósito: `banco/clientes.ts`
+ * importa `fundirCliente` daqui, e um import estático nos dois sentidos criaria
+ * ciclo. Dinâmico resolve na primeira chamada e fica em cache do módulo.
+ */
+async function repositorio() {
+  return import("@/dominio/banco/clientes");
+}
+
+/**
+ * `true` quando a carteira não aceita cadastro novo neste ambiente.
+ *
+ * Com banco, isto deixa de perguntar ao disco: se há `DATABASE_URL`, grava.
+ * Falha de conexão é outra coisa — erro de runtime, tratado no `catch` das
+ * ações, e não um estado permanente da instalação. Fundir os dois num teste
+ * assíncrono cacheado por processo produziria o pior dos dois: uma queda
+ * momentânea travaria a aplicação em somente leitura até a instância morrer.
+ */
 export async function carteiraSomenteLeitura(): Promise<boolean> {
+  if (bancoConfigurado()) return false;
   return !(await podeGravar());
 }
 
@@ -56,15 +82,18 @@ async function lerOuSemear(): Promise<Cliente[]> {
 const gravar = (lista: Cliente[]) => gravarJSON(ARQUIVO, lista);
 
 export async function listarClientes(): Promise<Cliente[]> {
+  if (bancoConfigurado()) return (await repositorio()).listarClientes();
   return lerOuSemear();
 }
 
 export async function buscarClientePorId(id: string) {
+  if (bancoConfigurado()) return (await repositorio()).buscarClientePorId(id);
   return (await listarClientes()).find((c) => c.id === id);
 }
 
 /** Busca por CNPJ tolerando máscara ("31.845.220/0001-88" ou só dígitos). */
 export async function buscarClientePorCNPJ(cnpj: string) {
+  if (bancoConfigurado()) return (await repositorio()).buscarClientePorCNPJ(cnpj);
   const alvo = apenasDigitos(cnpj);
   return (await listarClientes()).find((c) => c.cnpj === alvo);
 }
@@ -108,6 +137,8 @@ export function proximoId(lista: Cliente[]) {
 export async function adicionarCliente(
   entrada: NovoClienteEntrada,
 ): Promise<Cliente> {
+  if (bancoConfigurado()) return (await repositorio()).adicionarCliente(entrada);
+
   const lista = await listarClientes();
   const nome = entrada.nomeFantasia.trim();
 
@@ -213,6 +244,9 @@ export async function atualizarCliente(
   id: string,
   entrada: EdicaoClienteEntrada,
 ): Promise<Cliente> {
+  if (bancoConfigurado())
+    return (await repositorio()).atualizarCliente(id, entrada);
+
   const lista = await listarClientes();
   const indice = lista.findIndex((c) => c.id === id);
   if (indice < 0) throw new Error(`Cliente ${id} não existe.`);

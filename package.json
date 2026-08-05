@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "verificar": "tsx scripts/verificar.mts",
-    "checar-tudo": "npm run typecheck && npm run lint && npm run verificar && npm run build"
+    "checar-tudo": "npm run typecheck && npm run lint && npm run verificar && npm run build",
+    "migrar": "tsx scripts/migrar.mts",
+    "semear": "tsx scripts/semear.mts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.90",

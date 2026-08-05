@@ -58,6 +58,22 @@ CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_sessoes_expira  ON sessoes(expira_em);
 
 -- ---------- Carteira ----------
+/*
+  Sequência do id de cliente.
+
+  Substitui o `proximoId()` que lia a lista inteira, achava o maior e somava um.
+  Aquilo era ler-modificar-gravar sem transação: dois cadastros simultâneos
+  calculavam o mesmo número e a segunda gravação apagava a primeira — o cliente
+  não colidia, ele DESAPARECIA, com a tela já tendo dito que salvou.
+
+  `nextval` é atômico: duas chamadas concorrentes nunca devolvem o mesmo valor,
+  nem em instâncias diferentes. O formato `cli-NNN` é preservado porque já está
+  em uso e `sessao.ts` referencia `cli-003` diretamente.
+
+  O `semear` ajusta o valor inicial para depois do maior id existente.
+*/
+CREATE SEQUENCE IF NOT EXISTS clientes_seq AS bigint START 1;
+
 CREATE TABLE IF NOT EXISTS clientes (
   id                text PRIMARY KEY,
   razao_social      text,
@@ -109,6 +125,23 @@ CREATE INDEX IF NOT EXISTS idx_processos_cliente ON processos(cliente_id);
 -- Índice parcial: a pergunta feita o tempo todo é "o que está em aberto".
 CREATE INDEX IF NOT EXISTS idx_processos_abertos
   ON processos(cliente_id) WHERE encerrado_em IS NULL;
+
+/*
+  Sobreposição de processo, e não o processo inteiro.
+
+  A semente de processos gera datas RELATIVAS ao mês corrente, a cada chamada.
+  Copiar o processo para o banco congelaria essas datas no dia da migração, e o
+  mock voltaria a envelhecer — que é exatamente o que o desenho atual evita.
+
+  Então só o que a contadora DECIDIU vem para cá. O resto continua derivado em
+  código. Quando processo virar dado real (cadastrado por ela, não semeado), aí
+  as tabelas `processos` e `etapas_processo` acima entram em uso.
+*/
+CREATE TABLE IF NOT EXISTS processos_alteracoes (
+  processo_id  text PRIMARY KEY,
+  encerrado_em date NOT NULL,
+  criado_em    timestamptz NOT NULL DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS etapas_processo (
   id                text PRIMARY KEY,
