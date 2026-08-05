@@ -50,6 +50,30 @@ export function Modal({
   const focoAnterior = useRef<HTMLElement | null>(null);
   const reduzir = useReducedMotion();
 
+  /*
+    `aoFechar` guardada em ref, e FORA das dependências do efeito.
+
+    O bug que isto conserta, relatado em 05/08/2026: a cada tecla digitada no
+    formulário, o foco pulava para o botão de fechar.
+
+    A causa era a dependência `[aberto, aoFechar]`. Quem usa o modal declara
+    `aoFechar` como função dentro do componente, então ela nasce com identidade
+    nova a cada render — e o formulário re-renderiza a cada tecla, porque o
+    valor dos campos é estado. O efeito então re-executava a cada letra: o
+    cleanup devolvia o foco, e o efeito seguinte focava o primeiro elemento
+    focável do painel, que é justamente o botão de fechar.
+
+    Com a ref, o efeito passa a depender só de `aberto` — que é o que ele
+    realmente observa — e continua enxergando sempre a versão mais recente da
+    função.
+  */
+  const aoFecharRef = useRef(aoFechar);
+  // A atualização vai num efeito, não solta no corpo do componente: escrever
+  // em ref durante o render é efeito colateral, e o lint de hooks acusa.
+  useEffect(() => {
+    aoFecharRef.current = aoFechar;
+  }, [aoFechar]);
+
   useEffect(() => {
     if (!aberto) return;
 
@@ -65,7 +89,7 @@ export function Modal({
 
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === "Escape") {
-        aoFechar();
+        aoFecharRef.current();
         return;
       }
       if (evento.key !== "Tab" || !painel.current) return;
@@ -97,7 +121,9 @@ export function Modal({
       document.body.style.paddingRight = paddingOriginal;
       focoAnterior.current?.focus();
     };
-  }, [aberto, aoFechar]);
+    // Só `aberto`. Ver a nota da ref acima: incluir `aoFechar` fazia o efeito
+    // inteiro re-executar a cada tecla digitada.
+  }, [aberto]);
 
   // createPortal só existe no cliente. Sem esta guarda, quebra no SSR.
   if (typeof document === "undefined") return null;
