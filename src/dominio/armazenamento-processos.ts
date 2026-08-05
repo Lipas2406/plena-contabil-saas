@@ -1,4 +1,5 @@
 import { gravarJSON, lerJSON } from "@/dominio/armazenamento-base";
+import { bancoConfigurado } from "@/dominio/banco/conexao";
 import { listarProcessos as semear } from "@/dominio/mocks/processos";
 import type { Processo } from "@/dominio/tipos";
 
@@ -28,7 +29,18 @@ interface AlteracaoProcesso {
 
 type Alteracoes = Record<string, AlteracaoProcesso>;
 
+/**
+ * Onde a sobreposição mora, neste ambiente.
+ *
+ * Import dinâmico pelo mesmo motivo da carteira: evita ciclo e resolve na
+ * primeira chamada.
+ */
+async function repositorio() {
+  return import("@/dominio/banco/processos");
+}
+
 async function lerAlteracoes(): Promise<Alteracoes> {
+  if (bancoConfigurado()) return (await repositorio()).lerAlteracoes();
   return (await lerJSON<Alteracoes>(ARQUIVO)) ?? {};
 }
 
@@ -84,11 +96,23 @@ export async function encerrarProcesso(
   const existe = semear(hoje).some((p) => p.id === id);
   if (!existe) throw new Error(`Processo ${id} não existe.`);
 
-  const alteracoes = await lerAlteracoes();
-  alteracoes[id] = { encerradoEm: hoje.toISOString().slice(0, 10) };
-  // Sem `await` aqui, a linha seguinte leria de volta e devolveria o processo
-  // "encerrado" sem confirmação da escrita, e a tela mostraria sucesso.
-  await gravarJSON(ARQUIVO, alteracoes);
+  // Data em UTC, como todo o resto do módulo `kernel/datas`. Consequência
+  // conhecida: encerrar depois das 21h no horário de Brasília registra o dia
+  // seguinte. Vencimento e competência são datas de calendário e UTC está
+  // certo para elas; "quando a pessoa clicou" é um instante, e para esse caso
+  // não está. Mudar exige revisar o módulo inteiro, então fica registrado em
+  // vez de corrigido pela metade.
+  const encerradoEm = hoje.toISOString().slice(0, 10);
+
+  if (bancoConfigurado()) {
+    await (await repositorio()).registrarEncerramento(id, encerradoEm);
+  } else {
+    const alteracoes = await lerAlteracoes();
+    alteracoes[id] = { encerradoEm };
+    // Sem `await` aqui, a linha seguinte leria de volta e devolveria o processo
+    // "encerrado" sem confirmação da escrita, e a tela mostraria sucesso.
+    await gravarJSON(ARQUIVO, alteracoes);
+  }
 
   return (await listarProcessos(hoje)).find((p) => p.id === id)!;
 }
@@ -104,9 +128,13 @@ export async function reabrirProcesso(
   id: string,
   hoje = new Date(),
 ): Promise<Processo> {
-  const alteracoes = await lerAlteracoes();
-  delete alteracoes[id];
-  await gravarJSON(ARQUIVO, alteracoes);
+  if (bancoConfigurado()) {
+    await (await repositorio()).removerEncerramento(id);
+  } else {
+    const alteracoes = await lerAlteracoes();
+    delete alteracoes[id];
+    await gravarJSON(ARQUIVO, alteracoes);
+  }
 
   const processo = (await listarProcessos(hoje)).find((p) => p.id === id);
   if (!processo) throw new Error(`Processo ${id} não existe.`);
