@@ -10,8 +10,6 @@ import { cn } from "@/kernel/cn";
 import { CONFIANCA_MINIMA } from "@/dominio/tipos";
 import type { Documento } from "@/dominio/tipos";
 
-const NOME_CLIENTE: Record<string, string> = {};
-
 /**
  * Fila de conferência de documentos.
  *
@@ -39,7 +37,7 @@ export function FilaDocumentos({
     setDecididos((n) => n + 1);
   };
 
-  const nomes = { ...NOME_CLIENTE, ...nomesPorCliente };
+  const nomes = nomesPorCliente;
 
   return (
     <div>

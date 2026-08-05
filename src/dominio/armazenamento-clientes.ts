@@ -84,8 +84,14 @@ export interface NovoClienteEntrada {
   telefone?: string | null;
 }
 
-/** Continua a numeração `cli-001`, `cli-002`... que a semente já usa. */
-function proximoId(lista: Cliente[]) {
+/**
+ * Continua a numeração `cli-001`, `cli-002`... que a semente já usa.
+ *
+ * Exportada em 04/08/2026 só para ser testável. Ela é o ponto que a migração
+ * para banco vai substituir, e até aqui não tinha nenhum teste — ver
+ * `scripts/verificar.mts`.
+ */
+export function proximoId(lista: Cliente[]) {
   const maior = lista.reduce((max, c) => {
     const m = /^cli-(\d+)$/.exec(c.id);
     return m ? Math.max(max, Number(m[1])) : max;

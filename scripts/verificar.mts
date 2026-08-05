@@ -13,6 +13,7 @@ import { CLIENTES, cadastroIncompleto } from "@/dominio/mocks/clientes";
 import { avisosDoCliente } from "@/dominio/avisos";
 import {
   fundirCliente,
+  proximoId,
   type EdicaoClienteEntrada,
 } from "@/dominio/armazenamento-clientes";
 import { hojeISO } from "@/kernel/datas";
@@ -339,11 +340,15 @@ console.log(
     "guia renderiza por requisição, não no build",
     /export const dynamic\s*=\s*"force-dynamic"/.test(fonte),
   );
+  // Antes esta checagem era `promessa === -1 || (...)`, e por isso APAGAR a
+  // frase fazia o teste passar: ele ficava verde sem verificar nada. Agora a
+  // existência da frase é exigida primeiro, e só então a posição dela.
   const promessa = fonte.indexOf("Fica salvo de verdade");
   const condicional = fonte.indexOf("somenteLeitura ?");
+  checar("a promessa de gravação existe na página", promessa !== -1);
   checar(
     "a promessa de gravação vive dentro do condicional",
-    promessa === -1 || (condicional !== -1 && condicional < promessa),
+    promessa !== -1 && condicional !== -1 && condicional < promessa,
   );
 }
 
@@ -384,6 +389,71 @@ console.log(
       ressalva !== -1 && area !== -1 && ressalva < area,
     );
   }
+}
+
+/*
+  Geração de id.
+
+  Não havia teste nenhum para isto até 04/08/2026, e é justamente o que a
+  migração para banco vai substituir. Sem cobertura, trocar por id do banco
+  seria mudança às cegas.
+*/
+{
+  console.log("\n-- geração de id --");
+  const c = (id: string) => ({ id }) as Parameters<typeof proximoId>[0][number];
+
+  checar("lista vazia começa em cli-001", proximoId([]) === "cli-001");
+  checar(
+    "continua a partir do maior, não da quantidade",
+    proximoId([c("cli-001"), c("cli-007")]) === "cli-008",
+  );
+  checar(
+    "ignora id fora do padrão em vez de quebrar",
+    proximoId([c("cli-003"), c("avulso")]) === "cli-004",
+  );
+  checar(
+    "não reaproveita id de buraco na sequência",
+    proximoId([c("cli-001"), c("cli-005")]) === "cli-006",
+  );
+
+  // O defeito real, e ele não é sobre o id: duas chamadas com a MESMA lista
+  // devolvem o MESMO id, porque a função é pura e não reserva nada. Hoje isso
+  // é inofensivo (processo único, escrita rápida), mas com banco e duas
+  // instâncias os dois cadastros calculam o mesmo número e a segunda gravação
+  // sobrescreve a primeira: o cliente não colide, ele desaparece — e a tela já
+  // respondeu que salvou.
+  const lista = [c("cli-001")];
+  checar(
+    "MESMA lista devolve o MESMO id (por isso a sequência tem que sair do banco)",
+    proximoId(lista) === proximoId(lista),
+  );
+}
+
+/*
+  Idempotência da semente.
+
+  A garantia hoje é a existência do arquivo, não o conteúdo. Ao migrar, a
+  inserção precisa ser por registro (ON CONFLICT DO NOTHING), senão duas
+  instâncias frias semeiam as duas.
+*/
+{
+  console.log("\n-- semente --");
+  const ids = CLIENTES.map((cl) => cl.id);
+  checar("semente não tem id repetido", new Set(ids).size === ids.length);
+  checar(
+    "todo id da semente segue o padrão cli-NNN",
+    ids.every((id) => /^cli-\d{3}$/.test(id)),
+  );
+  // sessao.ts fixa este id; sem ele no banco, o painel do cliente devolve 500,
+  // não uma tela vazia.
+  checar(
+    "cli-003 existe na semente (sessao.ts depende dele)",
+    ids.includes("cli-003"),
+  );
+  checar(
+    "o próximo id não colide com nenhum já semeado",
+    !ids.includes(proximoId(CLIENTES)),
+  );
 }
 
 console.log(falhas === 0 ? "\n== TUDO PASSOU ==" : `\n== ${falhas} FALHA(S) ==`);

@@ -50,6 +50,10 @@ export default function PaginaEscritorio() {
     listarClientes().map((c) => [c.id, c.nomeFantasia]),
   );
 
+  // Uma leitura só por render. Estava sendo chamado duas vezes (no NovoCliente
+  // e no ListaClientes); com banco, cada chamada vira ida à rede.
+  const somenteLeitura = carteiraSomenteLeitura();
+
   const criticos = carteira.filter((c) => c.sinal === "critico").length;
   const atencao = carteira.filter((c) => c.sinal === "atencao").length;
 
@@ -124,14 +128,11 @@ export default function PaginaEscritorio() {
             {criticos > 0 && (
               <Etiqueta tom="critico">{criticos} travado(s)</Etiqueta>
             )}
-            <NovoCliente somenteLeitura={carteiraSomenteLeitura()} />
+            <NovoCliente somenteLeitura={somenteLeitura} />
           </div>
         }
       >
-        <ListaClientes
-          carteira={carteira}
-          somenteLeitura={carteiraSomenteLeitura()}
-        />
+        <ListaClientes carteira={carteira} somenteLeitura={somenteLeitura} />
       </Secao>
 
       <Secao

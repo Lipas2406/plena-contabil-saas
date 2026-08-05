@@ -36,11 +36,6 @@ function lerAlteracoes(): Alteracoes {
   return lerJSON<Alteracoes>(ARQUIVO) ?? {};
 }
 
-/** `true` quando o ambiente não aceita alterar processo (demonstração publicada). */
-export function processosSomenteLeitura(): boolean {
-  return !podeGravar();
-}
-
 /**
  * Aplica o encerramento num processo. Função PURA: não lê nem grava disco.
  *
@@ -81,11 +76,6 @@ export function listarProcessos(hoje = new Date()): Processo[] {
 
 export function listarProcessosDoCliente(clienteId: string, hoje = new Date()) {
   return listarProcessos(hoje).filter((p) => p.clienteId === clienteId);
-}
-
-/** Processos que ainda pedem trabalho. É o que alimenta contagem e prazo. */
-export function listarProcessosAbertos(hoje = new Date()) {
-  return listarProcessos(hoje).filter((p) => p.encerradoEm === null);
 }
 
 export function encerrarProcesso(id: string, hoje = new Date()): Processo {
