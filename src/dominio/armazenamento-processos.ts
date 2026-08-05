@@ -1,8 +1,4 @@
-import {
-  gravarJSON,
-  lerJSON,
-  podeGravar,
-} from "@/dominio/armazenamento-base";
+import { gravarJSON, lerJSON } from "@/dominio/armazenamento-base";
 import { listarProcessos as semear } from "@/dominio/mocks/processos";
 import type { Processo } from "@/dominio/tipos";
 
