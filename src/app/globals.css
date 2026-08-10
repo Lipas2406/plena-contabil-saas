@@ -63,6 +63,25 @@
   --vidro-forte: rgba(255, 255, 255, 0.07);
   --borda-suave: rgba(255, 255, 255, 0.08);
   --borda-acento: rgba(201, 168, 76, 0.24);
+
+  /*
+    Superfície de AÇÃO, separada da de painel de propósito.
+
+    Um card pode ser discreto, um botão não: ele precisa ser reconhecido como
+    clicável antes de ser lido. Com `--vidro` + `--borda-suave`, a borda do
+    botão secundário dava 1.23:1 contra o fundo, e a WCAG 1.4.11 pede 3:1 para
+    limite de componente. Não era exagero de norma: foi o relato de "botões
+    transparentes" no celular, onde o brilho da tela come justamente esse
+    resto de contraste.
+
+    Os valores abaixo são medidos, não estimados: 3.09:1 a borda parada e
+    3.20:1 a do hover. O fundo fica em 10% e não tenta passar sozinho, quem
+    cumpre o limite é a borda; subir o fundo apagaria o efeito de vidro, que é
+    a identidade da interface.
+  */
+  --vidro-acao: rgba(255, 255, 255, 0.1);
+  --borda-acao: rgba(255, 255, 255, 0.34);
+  --borda-acao-hover: rgba(201, 168, 76, 0.55);
   --brilho-acento: rgba(201, 168, 76, 0.14);
   --sombra-profunda: 0 24px 60px -12px rgba(0, 0, 0, 0.55);
   --sombra-elevada: 0 32px 80px -16px rgba(0, 0, 0, 0.7);
@@ -108,6 +127,17 @@ body {
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid var(--borda-suave);
+}
+
+/*
+  Vidro de botão: mesmo material, contraste de ação. Ver o porquê dos valores
+  junto da definição de `--borda-acao`.
+*/
+@utility vidro-acao {
+  background: var(--vidro-acao);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--borda-acao);
 }
 
 @utility vidro-forte {

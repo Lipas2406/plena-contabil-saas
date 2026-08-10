@@ -16,8 +16,10 @@ const VARIANTES: Record<Variante, string> = {
     "shadow-[0_8px_24px_-8px_rgba(201,168,76,0.6)]",
     "hover:shadow-[0_12px_32px_-8px_rgba(201,168,76,0.75)]",
   ),
+  // `vidro-acao` e não `vidro`: a superfície de painel some contra o fundo
+  // (1.23:1) e o botão vira texto solto. Ver globals.css, --borda-acao.
   secundario: cn(
-    "vidro text-texto hover:border-[var(--borda-acento)]",
+    "vidro-acao text-texto hover:border-[var(--borda-acao-hover)]",
     "hover:text-acento-claro",
   ),
   fantasma: "text-texto-suave hover:text-texto hover:bg-white/5",
