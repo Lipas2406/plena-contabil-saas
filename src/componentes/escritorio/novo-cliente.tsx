@@ -280,7 +280,7 @@ export function NovoCliente({
           />
 
           {form.tipoPessoa === "PJ" && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Selecao
                 rotulo="Natureza jurídica"
                 valor={form.naturezaJuridica}
@@ -300,7 +300,9 @@ export function NovoCliente({
                   setForm((f) => ({ ...f, porte: v as PorteEmpresa }))
                 }
               />
-              <div className="col-span-2">
+              {/* `col-span-1` no celular: num grid de uma coluna, pedir duas
+                  faz o Tailwind criar uma coluna implícita e o campo vaza. */}
+              <div className="col-span-1 sm:col-span-2">
                 <Selecao
                   rotulo="Regime tributário"
                   valor={form.regime}
@@ -322,7 +324,7 @@ export function NovoCliente({
             placeholder="Quem você fala no dia a dia"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Campo
               rotulo="E-mail"
               type="email"

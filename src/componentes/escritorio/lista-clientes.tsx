@@ -268,7 +268,7 @@ function DetalheCliente({
         />
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-[var(--borda-suave)] pt-5 text-sm">
+      <dl className="mt-6 grid grid-cols-1 gap-x-4 gap-y-4 border-t border-[var(--borda-suave)] pt-5 text-sm sm:grid-cols-2">
         <Dado rotulo="CNPJ" valor={c.cnpj ? formatarCNPJ(c.cnpj) : null} />
         <Dado rotulo="Natureza" valor={c.naturezaJuridica} />
         <Dado rotulo="Porte" valor={c.porte} />
@@ -276,7 +276,9 @@ function DetalheCliente({
           rotulo="Regime"
           valor={c.regime ?? (c.tipoPessoa === "PF" ? "Pessoa física" : null)}
         />
-        <div className="col-span-2">
+        {/* Mesmo cuidado do cadastro: no grid de uma coluna do celular,
+            `col-span-2` criaria uma coluna implícita e a Atividade vazaria. */}
+        <div className="col-span-1 sm:col-span-2">
           <Dado rotulo="Atividade" valor={c.atividade} />
         </div>
       </dl>
