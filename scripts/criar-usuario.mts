@@ -8,6 +8,11 @@
  * Uso:
  *   npm run criar-usuario -- --email marta@exemplo.com --nome "Marta" --senha "..."
  *
+ * Por padrão o usuário nasce com papel "escritorio" (acesso interno). Para
+ * criar um acesso de cliente, que só vê o próprio painel:
+ *   npm run criar-usuario -- --email marta@exemplo.com --nome "Marta" \
+ *     --papel cliente --cliente-id cli-003
+ *
  * A senha pode ser omitida; nesse caso é pedida no terminal, sem aparecer na
  * tela e sem ficar no histórico do shell — que é o motivo de existir esse modo.
  */
@@ -38,12 +43,24 @@ const email = valor("email");
 const nome = valor("nome");
 const trocar = args.includes("--trocar-senha");
 let senha = valor("senha");
+const papel = valor("papel");
+const clienteId = valor("cliente-id");
 
 if (!email || (!nome && !trocar)) {
   console.error(
-    'Uso: npm run criar-usuario -- --email <e-mail> --nome "<nome>" [--senha <senha>]\n' +
+    'Uso: npm run criar-usuario -- --email <e-mail> --nome "<nome>" [--senha <senha>] [--papel escritorio|cliente] [--cliente-id <id>]\n' +
       "     npm run criar-usuario -- --email <e-mail> --trocar-senha",
   );
+  process.exit(1);
+}
+
+if (papel && papel !== "escritorio" && papel !== "cliente") {
+  console.error('--papel precisa ser "escritorio" ou "cliente".');
+  process.exit(1);
+}
+
+if (papel === "cliente" && !clienteId) {
+  console.error("--papel cliente exige --cliente-id <id>.");
   process.exit(1);
 }
 
@@ -71,10 +88,17 @@ try {
     console.log(`\nSenha trocada para ${email}.`);
   } else {
     const primeiro = !(await existeAlgumUsuario());
-    const u = await criarUsuario({ email, nome: nome!, senha });
+    const u = await criarUsuario({
+      email,
+      nome: nome!,
+      senha,
+      papel: papel as "escritorio" | "cliente" | undefined,
+      clienteId,
+    });
     console.log(`\nUsuário criado: ${u.nome} <${u.email}>`);
-    console.log(`  id:    ${u.id}`);
-    console.log(`  papel: ${u.papel}`);
+    console.log(`  id:        ${u.id}`);
+    console.log(`  papel:     ${u.papel}`);
+    if (u.clienteId) console.log(`  clienteId: ${u.clienteId}`);
     if (primeiro) console.log("\n  (é o primeiro usuário do sistema)");
   }
   console.log(

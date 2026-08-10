@@ -1,20 +1,26 @@
+import { redirect } from "next/navigation";
 import { buscarClientePorId } from "@/dominio/armazenamento-clientes";
+import { exigirSessao } from "@/dominio/auth/sessao";
 
 /**
- * Sessão simulada.
+ * Sessão do cliente logado no /painel.
  *
- * Não existe autenticação ainda. Isolar o "quem está logado" aqui significa
- * que trocar isto por sessão real (NextAuth, Clerk, cookie próprio) é mexer
- * num arquivo, e nenhuma tela precisa saber que a origem mudou.
+ * Resolve pelo usuário real da sessão (`exigirSessao`), não por um id fixo.
+ * Um usuário com `papel !== "cliente"` (ou sem `clienteId`) não tem o que
+ * fazer aqui e volta para o Escritório — sem isso, qualquer sessão válida
+ * caía no mesmo cliente hardcoded, vendo dado de outra empresa.
  */
 
-const ID_CLIENTE_LOGADO = "cli-003";
-
 export async function clienteLogado() {
-  const cliente = await buscarClientePorId(ID_CLIENTE_LOGADO);
+  const usuario = await exigirSessao();
+  if (usuario.papel !== "cliente" || !usuario.clienteId) {
+    redirect("/escritorio");
+  }
+
+  const cliente = await buscarClientePorId(usuario.clienteId);
   if (!cliente) {
     throw new Error(
-      `Cliente ${ID_CLIENTE_LOGADO} não existe no mock. Ajuste src/dominio/sessao.ts.`,
+      `Usuário ${usuario.id} aponta para o cliente ${usuario.clienteId}, que não existe mais.`,
     );
   }
   return cliente;
